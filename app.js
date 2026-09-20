@@ -27,7 +27,8 @@
     ["Seated Calf Raise","machine","Calves"],["Dumbbell Side Bend","dumbbell","Core"],
     ["Weighted Crunch","dumbbell","Core"],["Cable Crunch","machine","Core"],
     ["Ab Machine","machine","Core"],["Dumbbell Thruster","dumbbell","Full Body"],
-    ["Dumbbell Clean","dumbbell","Full Body"],["Smith Machine Deadlift","machine","Full Body"]
+    ["Dumbbell Clean","dumbbell","Full Body"],["Smith Machine Deadlift","machine","Full Body"],
+    ["Dumbbell Shrug","dumbbell","Shoulders"]
   ];
   const STOCK = RAW.map(function (e, i) { return { id: "s" + i, n: e[0], t: e[1], m: e[2], custom: false }; });
   function load(k, fb) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (err) { return fb; } }
@@ -40,6 +41,92 @@
   function el(id) { return document.getElementById(id); }
   function defaultSets() { return [1, 2, 3].map(function () { return { id: uid(), w: "", r: "", done: false }; }); }
   function ensureSession() { var s = st().session; if (!s) { s = { id: uid(), name: "Workout", ts: Date.now(), exercises: [], notes: "" }; saveSession(s); } return s; }
+  var NAME_MAP = {
+    "Leg Extension Machine":["Leg Extension","machine","Quads"],
+    "Standing Calf Raise Machine":["Standing Calf Raise Machine","machine","Calves"],
+    "Seated Leg Curl Machine":["Seated Leg Curl","machine","Hamstrings"],
+    "Dumbbell Curl":["Dumbbell Bicep Curl","dumbbell","Biceps"],
+    "Dumbbell Overhead Triceps Extension":["Dumbbell Overhead Tricep Ext","dumbbell","Triceps"],
+    "Seated Dumbbell Press":["Dumbbell Shoulder Press","dumbbell","Shoulders"],
+    "Flat Dumbbell Bench Press":["Dumbbell Bench Press","dumbbell","Chest"],
+    "Dumbbell Row":["Dumbbell Row","dumbbell","Back"],
+    "Tricep extension":["Tricep Pushdown","machine","Triceps"],
+    "Hip Abduction (Open)":["Hip Abduction Machine","machine","Glutes"],
+    "Hip Adduction":["Hip Adduction Machine","machine","Glutes"],
+    "Glute Press":["Glute Kickback Machine","machine","Glutes"],
+    "Arnold Dumbbell Press":["Arnold Press","dumbbell","Shoulders"],
+    "Lat Pulldown":["Lat Pulldown","machine","Back"],
+    "Dumbbell Goblet Squat":["Goblet Squat","dumbbell","Quads"],
+    "Dumbbell Romanian Deadlift":["Dumbbell Romanian Deadlift","dumbbell","Hamstrings"],
+    "Dumbbell Bulgarian Split Squats":["Dumbbell Lunge","dumbbell","Quads"],
+    "Dumbbell Lunges":["Dumbbell Lunge","dumbbell","Quads"],
+    "Dumbbell Reverse Lunges":["Dumbbell Lunge","dumbbell","Quads"],
+    "Incline Dumbbell Bench Press":["Incline Dumbbell Press","dumbbell","Chest"],
+    "Incline Dumbbell Fly":["Dumbbell Fly","dumbbell","Chest"],
+    "Dumbbell Sumo Squat":["Goblet Squat","dumbbell","Quads"],
+    "Seated Machine Curl":["Bicep Curl Machine","machine","Biceps"],
+    "Lever Preacher Curl":["Bicep Curl Machine","machine","Biceps"],
+    "Dumbbell Side Bend":["Dumbbell Side Bend","dumbbell","Core"],
+    "Dumbbell Calf Raise":["Dumbbell Calf Raise","dumbbell","Calves"],
+    "Front Dumbbell Raise":["Dumbbell Lateral Raise","dumbbell","Shoulders"],
+    "Dumbbell Shrug":["Dumbbell Shrug","dumbbell","Shoulders"],
+    "Dumbbell Hammer Curl":["Dumbbell Hammer Curl","dumbbell","Biceps"],
+    "Flat Dumbbell Fly":["Dumbbell Fly","dumbbell","Chest"]
+  };
+  function parseFitNotes(text) {
+    var lines = text.replace(/^\uFEFF/, "").trim().split(/\r?\n/);
+    lines.shift();
+    var days = {};
+    lines.forEach(function (line) {
+      if (!line) return;
+      var p = line.split(",");
+      var date = p[0], raw = p[1], cat = p[2], w = p[3], reps = p[5];
+      if (!days[date]) days[date] = [];
+      days[date].push({ raw: raw, cat: cat, w: w, r: reps });
+    });
+    var workouts = [], prs = {};
+    Object.keys(days).sort().forEach(function (date) {
+      var exercises = [], cur = null;
+      days[date].forEach(function (row) {
+        var mapped = NAME_MAP[row.raw] || [row.raw, /dumbbell/i.test(row.raw) ? "dumbbell" : "machine", row.cat === "Abs" ? "Core" : row.cat];
+        var n = mapped[0], t = mapped[1], m = mapped[2];
+        var ww = row.w ? String(Number(row.w)) : "";
+        var rr = row.r ? String(parseInt(row.r, 10)) : "";
+        var set = { id: uid(), w: ww, r: rr, done: true };
+        if (cur && cur.n === n) cur.sets.push(set);
+        else { cur = { eid: "imp-" + n, n: n, t: t, m: m, sets: [set], note: n === row.raw ? "" : row.raw }; exercises.push(cur); }
+        var loadN = Number(row.w) || 0, repsN = Number(row.r) || 0;
+        if (loadN && repsN) {
+          var est = loadN * (1 + repsN / 30), curp = prs[n];
+          if (!curp || est > curp.est || loadN > curp.w) prs[n] = { w: loadN, r: repsN, est: est, ts: Date.parse(date + "T12:00:00"), unit: "kg" };
+        }
+      });
+      workouts.push({ id: "fn-" + date, name: "Gym " + date.slice(5), ts: Date.parse(date + "T12:00:00"), exercises: exercises, notes: "Imported from FitNotes" });
+    });
+    workouts.sort(function (a, b) { return b.ts - a.ts; });
+    return { workouts: workouts, prs: prs };
+  }
+  function applySeed(seed) {
+    if (!seed || !seed.workouts) return 0;
+    var ws = st().workouts, have = {}, added = 0;
+    ws.forEach(function (w) { have[w.id] = 1; });
+    seed.workouts.forEach(function (w) { if (!have[w.id]) { ws.push(w); added += 1; } });
+    ws.sort(function (a, b) { return b.ts - a.ts; });
+    save("il_workouts", ws);
+    var prs = load("il_prs", {});
+    Object.keys(seed.prs || {}).forEach(function (n) {
+      var p = seed.prs[n], cur = prs[n];
+      if (!cur || (p.est || 0) > (cur.est || 0) || p.w > cur.w) prs[n] = p;
+    });
+    save("il_prs", prs);
+    save("il_seeded", "fitnotes-v1");
+    return added;
+  }
+  function mergeSeed(force, cb) {
+    if (!force && load("il_seeded", "") === "fitnotes-v1") { if (cb) cb(0); return 0; }
+    function done(n) { if (cb) cb(n); }
+    fetch("fitnotes.csv").then(function (r) { return r.text(); }).then(function (t) { done(applySeed(parseFitNotes(t))); }).catch(function () { done(0); });
+  }
   var libType = "all", libMuscle = "all", libQ = "", timerLeft = 0, timerId = null, deferredPrompt = null;
   function showView(name) {
     document.querySelectorAll(".view").forEach(function (v) { v.classList.remove("active"); });
@@ -117,7 +204,7 @@
   }
   function renderHistory() {
     var unit = st().unit, ws = st().workouts;
-    var html = '<div class="tiny" style="margin-bottom:8px">' + ws.length + " saved sessions</div>";
+    var html = '<div class="row space" style="margin-bottom:8px"><span class="tiny">' + ws.length + " saved sessions</span><button class=\"btn sm ghost\" type=\"button\" data-act=\"import-seed\">Import FitNotes</button></div>";
     if (!ws.length) html += '<div class="card empty">Finish a workout to see it here.</div>';
     ws.forEach(function (w) {
       html += '<div class="card"><div class="row space"><div><div class="ex-name">' + esc(w.name) + '</div><div class="tiny">' + new Date(w.ts).toLocaleString() + '</div></div><button class="btn sm ghost" type="button" data-act="del-work" data-id="' + w.id + '">X</button></div>';
@@ -238,6 +325,7 @@
     }
     if (act === "discard") { if (!confirm("Discard this session?")) return; saveSession(null); renderWorkout(); }
     if (act === "del-work") { if (!confirm("Delete this session?")) return; save("il_workouts", st().workouts.filter(function (w) { return w.id !== t.getAttribute("data-id"); })); renderHistory(); }
+    if (act === "import-seed") { mergeSeed(true, function (n) { alert(n + " sessions imported from FitNotes."); renderHistory(); renderProgress(); }); }
   });
   document.addEventListener("change", function (e) {
     var t = e.target, act = t.getAttribute("data-act");
@@ -263,5 +351,5 @@
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(function () {});
   el("dateLabel").textContent = new Date().toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
   el("unitBtn").textContent = st().unit.toUpperCase();
-  renderHome();
+  mergeSeed(false, function () { renderHome(); });
 })();
