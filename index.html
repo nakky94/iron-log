@@ -13,8 +13,105 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#0a0b0d;--bg-2:#111318;--card:#171a20;--card-2:#1d2129;--line:#2a303a;--text:#f2f0ea;--muted:#8b93a1;--accent:#c8f542;--warn:#ff6b3d;--blue:#6ec8ff;--radius:16px;--safe-b:env(safe-area-inset-bottom)}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;background:var(--bg);color:var(--text);font-family:"IBM Plex Sans",system-ui,sans-serif}
+    body{padding-bottom:calc(76px + var(--safe-b))}
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{cursor:pointer;border:0;background:none}
+    .brand{font-family:"Bebas Neue",sans-serif;letter-spacing:.04em;font-size:34px;line-height:.9}
+    .brand span{color:var(--accent)}
+    .app{max-width:520px;margin:0 auto;min-height:100%}
+    header.top{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#0a0b0d 70%,transparent);padding:18px 18px 10px;display:flex;align-items:flex-end;justify-content:space-between}
+    .sub{color:var(--muted);font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+    .view{display:none;padding:8px 16px 24px}
+    .view.active{display:block}
+    .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:520px;display:grid;grid-template-columns:repeat(5,1fr);background:#0e1014f2;border-top:1px solid var(--line);padding:8px 6px calc(8px + var(--safe-b));z-index:30}
+    .nav button{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-size:10px;letter-spacing:.04em;text-transform:uppercase}
+    .nav button.active{color:var(--accent)}
+    .nav svg{width:22px;height:22px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+    .row{display:flex;gap:8px;align-items:center}
+    .space{justify-content:space-between}
+    .grow{flex:1;min-width:0}
+    .tiny{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+    .btn{background:var(--accent);color:#111;font-weight:700;border-radius:12px;padding:12px 14px;width:100%}
+    .btn.ghost{background:var(--card-2);color:var(--text);border:1px solid var(--line)}
+    .btn.warn{background:var(--warn);color:#fff}
+    .btn.sm{padding:8px 10px;width:auto;font-size:13px}
+    .btn.icon{width:36px;height:36px;padding:0;display:grid;place-items:center;border-radius:10px}
+    .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin:8px 0 12px}
+    .chip{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 12px;font-size:12px;color:var(--muted)}
+    .chip.on{background:var(--accent);color:#111;border-color:var(--accent);font-weight:700}
+    input,select,textarea{width:100%;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+    textarea{min-height:72px;resize:vertical}
+    .ex-name{font-weight:650}
+    .tag{font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:3px 7px;border-radius:6px;background:#232833;color:var(--muted)}
+    .tag.db{color:var(--blue);background:#173044}
+    .tag.mc{color:var(--accent);background:#243014}
+    .set-grid{display:grid;grid-template-columns:28px 1fr 1fr 40px;gap:6px;align-items:center;margin-top:8px}
+    .set-grid input{text-align:center;padding:8px 6px}
+    .done{opacity:.55;text-decoration:line-through}
+    .timer-overlay{display:none;position:fixed;inset:0;z-index:50;background:#000c;align-items:center;justify-content:center;padding:24px}
+    .timer-overlay.show{display:flex}
+    .timer-box{width:min(360px,100%);background:var(--card);border:1px solid var(--line);border-radius:24px;padding:28px 20px;text-align:center}
+    .clock{font-family:"Bebas Neue",sans-serif;font-size:96px;line-height:1;color:var(--accent)}
+    .clock.warn{color:var(--warn)}
+    .stat{text-align:center}
+    .stat b{display:block;font-family:"Bebas Neue",sans-serif;font-size:32px;color:var(--accent)}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+    .bar{height:8px;background:#232833;border-radius:99px;overflow:hidden;margin-top:6px}
+    .bar>i{display:block;height:100%;background:var(--accent)}
+    .empty{text-align:center;color:var(--muted);padding:28px 10px}
+    .modal-bg{display:none;position:fixed;inset:0;background:#000a;z-index:40;align-items:flex-end;justify-content:center}
+    .modal-bg.show{display:flex}
+    .sheet{width:100%;max-width:520px;background:var(--bg-2);border-radius:20px 20px 0 0;padding:16px 16px calc(20px + var(--safe-b));max-height:88vh;overflow:auto}
+    .grab{width:42px;height:4px;background:#3a4150;border-radius:99px;margin:0 auto 12px}
+    .install-banner{display:none}
+    .install-banner.show{display:block}
+  </style>
 </head>
 <body>
-<!-- styles and markup loaded from committed index; see follow-up if truncated -->
+  <div class="app">
+    <header class="top">
+      <div>
+        <div class="sub" id="dateLabel"></div>
+        <div class="brand">GYM <span>LOG</span></div>
+      </div>
+      <div class="row">
+        <button class="btn sm ghost" type="button" id="installBtn" style="display:none">Install</button>
+        <button class="btn sm ghost" type="button" id="unitBtn">KG</button>
+      </div>
+    </header>
+    <section class="view active" id="view-home"></section>
+    <section class="view" id="view-library"></section>
+    <section class="view" id="view-workout"></section>
+    <section class="view" id="view-history"></section>
+    <section class="view" id="view-progress"></section>
+  </div>
+  <nav class="nav">
+    <button type="button" class="active" data-view="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11l8-7 8 7v9a1 1 0 01-1 1h-5v-6H10v6H5a1 1 0 01-1-1z"/></svg>Home</button>
+    <button type="button" data-view="library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="7" height="16" rx="1"/><rect x="14" y="4" width="7" height="16" rx="1"/></svg>Gear</button>
+    <button type="button" data-view="workout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Train</button>
+    <button type="button" data-view="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Log</button>
+    <button type="button" data-view="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 18V6M10 18V10M16 18V8M22 18H2"/></svg>PRs</button>
+  </nav>
+  <div class="timer-overlay" id="timer">
+    <div class="timer-box">
+      <div class="tiny">Rest</div>
+      <div class="clock" id="clock">1:30</div>
+      <div class="row" style="justify-content:center;gap:8px;margin:12px 0">
+        <button class="btn sm ghost" type="button" data-act="timer-adj" data-d="-15">-15</button>
+        <button class="btn sm ghost" type="button" data-act="timer-adj" data-d="15">+15</button>
+      </div>
+      <div class="row" style="gap:8px">
+        <button class="btn ghost" type="button" data-act="timer-skip">Skip</button>
+        <button class="btn" type="button" data-act="timer-skip">Done</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-bg" id="modal"><div class="sheet" id="sheet"></div></div>
+  <script src="app.js"></script>
 </body>
 </html>
