@@ -14,13 +14,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    :root{--bg:#0a0b0d;--bg-2:#111318;--card:#171a20;--card-2:#1d2129;--line:#2a303a;--text:#f2f0ea;--muted:#8b93a1;--accent:#c8f542;--warn:#ff6b3d;--blue:#6ec8ff;--radius:16px;--safe-b:env(safe-area-inset-bottom)}
+    :root{--bg:#0a0b0d;--bg-2:#111318;--card:#171a20;--card-2:#1d2129;--line:#2a303a;--text:#f2f0ea;--muted:#8b93a1;--accent:#FFD400;--warn:#ff6b3d;--blue:#6ec8ff;--radius:16px;--safe-b:env(safe-area-inset-bottom)}
     *{box-sizing:border-box;margin:0;padding:0}
     html,body{height:100%;background:var(--bg);color:var(--text);font-family:"IBM Plex Sans",system-ui,sans-serif}
     body{padding-bottom:calc(76px + var(--safe-b))}
     button,input,select,textarea{font:inherit;color:inherit}
     button{cursor:pointer;border:0;background:none}
-    .brand{font-family:"Bebas Neue",sans-serif;letter-spacing:.04em;font-size:34px;line-height:.9}
+    .brand{font-family:"Bebas Neue",sans-serif;letter-spacing:.04em;font-size:34px;line-height:.9;display:flex;align-items:center;gap:10px}
+    .brand .mark{width:22px;height:22px;background:#FFD400;border-radius:6px;display:inline-block}
     .brand span{color:var(--accent)}
     .app{max-width:520px;margin:0 auto;min-height:100%}
     header.top{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#0a0b0d 70%,transparent);padding:18px 18px 10px;display:flex;align-items:flex-end;justify-content:space-between}
@@ -49,7 +50,7 @@
     .ex-name{font-weight:650}
     .tag{font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:3px 7px;border-radius:6px;background:#232833;color:var(--muted)}
     .tag.db{color:var(--blue);background:#173044}
-    .tag.mc{color:var(--accent);background:#243014}
+    .tag.mc{color:var(--accent);background:#3a3208}
     .set-grid{display:grid;grid-template-columns:28px 1fr 1fr 40px;gap:6px;align-items:center;margin-top:8px}
     .set-grid input{text-align:center;padding:8px 6px}
     .done{opacity:.55;text-decoration:line-through}
@@ -77,7 +78,7 @@
     <header class="top">
       <div>
         <div class="sub" id="dateLabel"></div>
-        <div class="brand">GYM <span>LOG</span></div>
+        <div class="brand"><i class="mark"></i>GYM <span>LOG</span></div>
       </div>
       <div class="row">
         <button class="btn sm ghost" type="button" id="installBtn" style="display:none">Install</button>
