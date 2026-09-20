@@ -2,6 +2,7 @@
   var BOWFLEX = [2.3,3.4,4.5,5.7,6.8,7.9,9.1,10.2,11.3,12.5,13.6,14.7,15.9,18.1,20.4,22.7,23.8,24.9,27.2,29.5,31.8,34.0,36.3,38.6,40.8];
   function load(k, fb) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } }
   function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+  save("il_unit", "kg");
   function nearestStep(w, steps) {
     var n = Number(w), best = steps[0], d = Math.abs(n - best);
     steps.forEach(function (s) { var x = Math.abs(n - s); if (x < d) { d = x; best = s; } });
@@ -29,14 +30,14 @@
   }
   window.gymSuggest = function (name, kind) {
     var last = lastLogged(name);
-    if (!last) return { w: "", r: "10", nSets: 3, tip: "No history. Start at a comfortable 10." };
+    if (!last) return { w: "", r: "10", nSets: 3, tip: "No history. Start at a comfortable 10 kg x 10." };
     var hit = last.r >= 10, w, r, tip;
     if (kind === "dumbbell") {
-      if (hit) { w = nextDumbbell(last.w); r = "8"; tip = "Hit " + last.w + " x " + last.r + ". Next Bowflex click: " + w + " x 8."; }
-      else { w = nearestStep(last.w, BOWFLEX); r = String(Math.min(12, last.r + 1)); tip = "Stay " + w + " and chase " + r + " (last " + last.r + ")."; }
+      if (hit) { w = nextDumbbell(last.w); r = "8"; tip = "Hit " + last.w + " kg x " + last.r + ". Next Bowflex: " + w + " kg x 8."; }
+      else { w = nearestStep(last.w, BOWFLEX); r = String(Math.min(12, last.r + 1)); tip = "Stay " + w + " kg and chase " + r + " (last " + last.r + ")."; }
     } else {
-      if (hit) { w = nextMachine(last.w); r = "8"; tip = "Hit " + last.w + " x " + last.r + ". Next stack: " + w + " x 8."; }
-      else { w = last.w; r = String(Math.min(12, last.r + 1)); tip = "Stay " + w + " and chase " + r + "."; }
+      if (hit) { w = nextMachine(last.w); r = "8"; tip = "Hit " + last.w + " kg x " + last.r + ". Next stack: " + w + " kg x 8."; }
+      else { w = last.w; r = String(Math.min(12, last.r + 1)); tip = "Stay " + w + " kg and chase " + r + "."; }
     }
     return { w: String(w), r: r, nSets: Math.max(3, last.nSets || 3), tip: tip };
   };
@@ -91,6 +92,13 @@
     }, 20);
   }
   document.addEventListener("click", function (e) {
+    if (e.target && (e.target.id === "unitBtn" || (e.target.closest && e.target.closest("#unitBtn")))) {
+      e.stopPropagation();
+      save("il_unit", "kg");
+      var lab = document.getElementById("unitBtn");
+      if (lab) lab.textContent = "KG";
+      return;
+    }
     var t = e.target.closest("[data-act], [data-view]");
     if (!t) return;
     var act = t.getAttribute("data-act");
@@ -98,6 +106,10 @@
     if (act === "add-ex" || act === "load-routine") applySoon(false);
     if (act === "apply-sg") applySoon(true);
     if (view === "workout") setTimeout(paintTips, 40);
-  });
-  setTimeout(paintTips, 400);
+  }, true);
+  setTimeout(function () {
+    var lab = document.getElementById("unitBtn");
+    if (lab) lab.textContent = "KG";
+    paintTips();
+  }, 400);
 })();
