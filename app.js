@@ -33,7 +33,7 @@
   function load(k, fb) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (err) { return fb; } }
   function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
   function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
-  function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, """); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return ({ amp: "&#38;", lt: "&#60;", gt: "&#62;", quot: "&#34;" }[c === "&" ? "amp" : c === "<" ? "lt" : c === ">" ? "gt" : "quot"]); }); }
   function st() { return { unit: load("il_unit", "kg"), custom: load("il_custom", []), workouts: load("il_workouts", []), routines: load("il_routines", []), session: load("il_session", null), restSec: load("il_rest", 90) }; }
   function allEx() { return STOCK.concat(st().custom); }
   function saveSession(s) { save("il_session", s); }
