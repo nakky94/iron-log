@@ -66,7 +66,7 @@
     var el = document.getElementById("sessClock");
     if (!el) {
       var row = view.querySelector(".row.space"); if (!row) return;
-      el = document.createElement("span"); el.id = "sessClock"; el.className = "tiny"; el.style.letterSpacing = "0.04em";
+      el = document.createElement("span"); el.id = "sessClock"; el.className = "tiny";
       row.insertBefore(el, row.firstChild);
     }
     el.textContent = clockText(Date.now() - s.clockStart);
@@ -76,13 +76,14 @@
     if (view.querySelector("#volWeek")) return;
     var tw = weekBounds(0), lw = weekBounds(1), nowV = volumeByMuscle(tw[0], tw[1]), lastV = volumeByMuscle(lw[0], lw[1]);
     var muscles = ["Chest","Back","Shoulders","Quads","Hamstrings","Calves","Biceps","Triceps","Core","Glutes"];
+    var live = muscles.map(function (m) { return { m: m, a: Math.round(nowV[m] || 0), b: Math.round(lastV[m] || 0) }; }).filter(function (x) { return x.a > 0; });
+    var max = live.reduce(function (n, x) { return Math.max(n, x.a); }, 0) || 1;
     var card = document.createElement("div"); card.id = "volWeek"; card.className = "card";
-    var rows = muscles.filter(function (m) { return (nowV[m] || 0) + (lastV[m] || 0); }).map(function (m) {
-      var a = Math.round(nowV[m] || 0), b = Math.round(lastV[m] || 0);
-      var delta = b ? Math.round((a - b) / b * 100) : (a ? 100 : 0);
-      return '<div class="row space" style="margin-top:8px"><div>' + m + '</div><div class="tiny">' + a + " this wk" + (b ? " · " + (delta >= 0 ? "+" : "") + delta + "%" : "") + "</div></div>";
+    var rows = live.map(function (x) {
+      var pct = Math.max(6, Math.round(x.a / max * 100));
+      return '<div class="vol-row"><div class="row space"><div>' + x.m + '</div><div class="tiny">' + x.a + '</div></div><div class="bar"><i style="width:' + pct + '%"></i></div></div>';
     }).join("");
-    card.innerHTML = '<div class="tiny">Weekly volume (kg x reps)</div>' + (rows || '<div class="tiny" style="margin-top:8px">No sets this week yet.</div>');
+    card.innerHTML = '<div class="tiny">Weekly volume</div>' + (rows || '<div class="tiny" style="margin-top:8px">No sets logged this week.</div>');
     var stats = view.querySelector(".stats"); if (stats) stats.insertAdjacentElement("afterend", card); else view.appendChild(card);
   }
   function enhanceTrainMore() {
@@ -102,7 +103,7 @@
         var stall = plateau(ex.n);
         if (stall) {
           var flag = document.createElement("div"); flag.className = "tiny stall-flag";
-          flag.style.cssText = "margin-top:8px;text-transform:none;letter-spacing:0;color:#ff6b3d";
+          flag.style.cssText = "margin-top:8px;color:#ff6b3d";
           flag.textContent = "Stalled at " + stall + " kg for 3 sessions. Add a rep or the next click.";
           var grid = card.querySelector(".set-grid"); if (grid) card.insertBefore(flag, grid); else card.appendChild(flag);
         }
