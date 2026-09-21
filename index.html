@@ -32,6 +32,7 @@
     .unit-label,#unitBtn,#installBtn,#homeInstall,[data-act='repeat-last'],#view-home [data-act='start-fresh']{display:none !important}
     .view{display:none;padding:4px 16px calc(var(--nav-h) + var(--safe-b) + 20px)}
     .view.active{display:block}
+    #view-home.active:not(.ready){visibility:hidden}
     .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:520px;display:grid;grid-template-columns:repeat(5,1fr);background:#0c0c0c;border-top:1px solid #1a1a1a;padding:4px 8px calc(6px + var(--safe-b));z-index:30;min-height:calc(var(--nav-h) + var(--safe-b))}
     .nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--muted);font-size:10px;font-weight:600;min-height:40px}
     .nav button span{display:none;font-size:10px;font-weight:600}
