@@ -16,34 +16,35 @@
       --line:#242424; --text:#f4f4f5; --muted:#9a9a9a; --accent:#FFD400;
       --warn:#ff6b3d; --blue:#7ec8ff; --radius:18px;
       --safe-b:env(safe-area-inset-bottom, 0px);
-      --nav-h:64px;
+      --safe-t:env(safe-area-inset-top, 0px);
+      --nav-h:56px;
     }
     *{box-sizing:border-box;margin:0;padding:0}
     html,body{min-height:100dvh;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
-    body{padding-bottom:calc(var(--nav-h) + var(--safe-b) + 28px);-webkit-font-smoothing:antialiased}
+    body{padding-bottom:calc(var(--nav-h) + var(--safe-b) + 16px);-webkit-font-smoothing:antialiased}
     button,input,select,textarea{font:inherit;color:inherit}
     button{cursor:pointer;border:0;background:none}
     .app{max-width:520px;margin:0 auto;min-height:100dvh}
-    header.top{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#0c0c0c 72%,transparent);padding:16px 18px 12px;display:flex;align-items:flex-end;justify-content:space-between}
-    .sub{color:var(--muted);font-size:12px;letter-spacing:.02em;font-weight:500}
-    .brand{display:flex;align-items:center;gap:10px;margin-top:4px;font-size:clamp(18px,5vw,22px);font-weight:700;letter-spacing:-.03em;color:var(--text)}
-    .brand .mark{width:18px;height:18px;background:var(--accent);border-radius:5px;flex:0 0 18px}
-    .unit-label,#unitBtn,#installBtn,#homeInstall{display:none !important}
-    .view{display:none;padding:6px 16px calc(var(--nav-h) + var(--safe-b) + 28px)}
+    header.top{position:sticky;top:0;z-index:20;background:#0c0c0c;padding:calc(6px + var(--safe-t)) 16px 6px;display:flex;align-items:center;min-height:0}
+    .sub,#dateLabel{display:none !important}
+    .brand{display:flex;align-items:center;gap:8px;margin:0;font-size:17px;font-weight:700;letter-spacing:-.03em;color:var(--text)}
+    .brand .mark{width:12px;height:12px;background:var(--accent);border-radius:3px;flex:0 0 12px}
+    .unit-label,#unitBtn,#installBtn,#homeInstall,[data-act='repeat-last']{display:none !important}
+    .view{display:none;padding:4px 16px calc(var(--nav-h) + var(--safe-b) + 20px)}
     .view.active{display:block}
-    .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:520px;display:grid;grid-template-columns:repeat(5,1fr);background:#0c0c0c;border-top:1px solid #1a1a1a;padding:8px 8px calc(8px + var(--safe-b));z-index:30;min-height:calc(var(--nav-h) + var(--safe-b))}
-    .nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--muted);font-size:10px;font-weight:600;min-height:44px}
+    .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:520px;display:grid;grid-template-columns:repeat(5,1fr);background:#0c0c0c;border-top:1px solid #1a1a1a;padding:4px 8px calc(6px + var(--safe-b));z-index:30;min-height:calc(var(--nav-h) + var(--safe-b))}
+    .nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--muted);font-size:10px;font-weight:600;min-height:40px}
     .nav button span{display:none;font-size:10px;font-weight:600}
     .nav button.active{color:var(--text)}
     .nav button.active span{display:block}
     .nav button.active svg{color:var(--accent)}
-    .nav svg{width:22px;height:22px}
-    .card{background:var(--card);border:0;border-radius:var(--radius);padding:16px;margin-bottom:12px}
+    .nav svg{width:20px;height:20px}
+    .card{background:var(--card);border:0;border-radius:var(--radius);padding:14px;margin-bottom:10px}
     .row{display:flex;gap:8px;align-items:center}
     .space{justify-content:space-between}
     .grow{flex:1;min-width:0}
     .tiny{font-size:12px;letter-spacing:0;text-transform:none;color:var(--muted);font-weight:500}
-    .btn{background:var(--accent);color:#111;font-weight:700;border-radius:14px;padding:13px 14px;width:100%;min-height:44px;letter-spacing:-.01em}
+    .btn{background:var(--accent);color:#111;font-weight:700;border-radius:14px;padding:12px 14px;width:100%;min-height:44px;letter-spacing:-.01em}
     .btn.ghost{background:var(--card-2);color:var(--text)}
     .btn.warn{background:transparent;color:var(--warn)}
     .btn.sm{padding:8px 12px;width:auto;font-size:13px;border-radius:10px;min-height:44px}
@@ -67,15 +68,15 @@
     .timer-box{width:min(360px,100%);background:var(--card);border-radius:24px;padding:28px 20px;text-align:center}
     .clock{font-size:clamp(56px,18vw,84px);line-height:1;color:var(--accent);font-weight:700;letter-spacing:-.04em}
     .clock.warn{color:var(--warn)}
-    .stat{text-align:center;background:var(--card);border-radius:16px;padding:14px 8px}
-    .stat b{display:block;font-size:clamp(22px,6vw,28px);color:var(--text);letter-spacing:-.04em;font-weight:700}
+    .stat{text-align:center;background:var(--card);border-radius:14px;padding:10px 6px}
+    .stat b{display:block;font-size:20px;color:var(--text);letter-spacing:-.04em;font-weight:700}
     .stat-accent{background:#1d1a0a}
     .stat-accent b{color:var(--accent)}
-    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 14px}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 10px}
     .bar{height:5px;background:#232323;border-radius:99px;overflow:hidden;margin-top:6px}
     .bar>i{display:block;height:100%;background:var(--accent)}
     .vol-row{margin-top:10px}
-    .strip{display:flex;align-items:center;justify-content:space-between;padding:10px 2px 14px;color:var(--muted);font-size:13px}
+    .strip{display:flex;align-items:center;justify-content:space-between;padding:6px 2px 10px;color:var(--muted);font-size:13px}
     .text-link{color:var(--text);font-size:13px;font-weight:600;background:none;width:auto;padding:0;min-height:0}
     .text-link.muted{color:var(--muted);font-weight:500}
     .empty{text-align:center;color:var(--muted);padding:26px 12px;line-height:1.45}
@@ -94,10 +95,7 @@
 <body>
   <div class="app">
     <header class="top">
-      <div>
-        <div class="sub" id="dateLabel"></div>
-        <div class="brand"><i class="mark"></i>Gym Log</div>
-      </div>
+      <div class="brand"><i class="mark"></i>Gym Log</div>
       <button type="button" id="installBtn" hidden>Install</button>
       <div id="unitBtn" hidden>kg</div>
     </header>
