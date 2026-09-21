@@ -119,7 +119,7 @@
   }
   var myTimer = null, left = 0;
   function startRest(sec) { left = sec || 90; var wrap = document.getElementById("timer"); if (wrap) wrap.classList.add("show"); tick(); clearInterval(myTimer); myTimer = setInterval(tick, 1000); }
-  function tick() { var clock = document.getElementById("clock"); if (!clock) return; var m = Math.floor(left / 60), s = String(left % 60); if (s.length < 2) s = "0" + s; clock.textContent = m + ":" + s; clock.classList.toggle("warn", left <= 10); if (left <= 0) { clearInterval(myTimer); if (navigator.vibrate) navigator.vibrate([200, 80, 200]); return; } left -= 1; }
+  function tick() { var clock = document.getElementById("clock"); if (!clock) return; var m = Math.floor(left / 60), s = String(left % 60); if (s.length < 2) s = "0" + s; clock.textContent = m + ":" + s; clock.classList.toggle("warn", left <= 10); if (left <= 0) { clearInterval(myTimer); return; } left -= 1; }
   function restFor(name) { return REST[name] || REST.default; }
   function download(name, text, type) { var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: type })); a.download = name; a.click(); }
   function exportJSON() { download("gym-log.json", JSON.stringify({ workouts: workouts(), routines: load("il_routines", []), prs: load("il_prs", {}), unit: "kg" }, null, 2), "application/json"); }
@@ -134,8 +134,6 @@
     if (act === "hist-range") { histRange = t.getAttribute("data-v"); enhanceHistory(true); }
     if (act === "export-json") exportJSON();
     if (act === "export-csv") exportCSV();
-    if (act === "toggle-set") { var i = Number(t.getAttribute("data-i")); var s = load("il_session", null); if (s && s.exercises[i]) startRest(restFor(s.exercises[i].n)); }
-    if (act === "start-timer") { var card = t.closest(".card"); var nameEl = card ? card.querySelector(".ex-name") : null; startRest(restFor(nameEl ? nameEl.textContent : "")); }
     if (act === "timer-skip") clearInterval(myTimer);
     if (act === "finish") { setTimeout(function () { var oid = load("il_edit_of", null); if (!oid) return; var list = workouts(); if (!list.length) return; var neu = list[0]; neu.editOf = null; save("il_workouts", [neu].concat(list.slice(1).filter(function (x) { return x.id !== oid; }))); save("il_edit_of", null); }, 120); }
   });
