@@ -41,9 +41,6 @@
     if (days < 8) return days + "d ago";
     return fmtDay(ts);
   }
-  function shortName(n) {
-    return String(n || "").replace(/^Dumbbell\s/, "").replace(/\sMachine$/, "");
-  }
   function liftDeltas() {
     var map = {};
     workouts().forEach(function (w) {
@@ -63,7 +60,6 @@
       if (a.length < 2 || !a[1].w) return;
       out.push({ n: n, now: a[0].w, prev: a[1].w, pct: (a[0].w - a[1].w) / a[1].w * 100, ts: a[0].ts });
     });
-    out.sort(function (a, b) { return Math.abs(b.pct) - Math.abs(a.pct); });
     return out;
   }
   function avgPct(rows) {
@@ -91,26 +87,25 @@
       '<div class="stat stat-accent"><b>' + fmtVol(tw) + '</b><span class="tiny">week volume' + (delta ? " · " + delta : "") + '</span></div>' +
       '<div class="stat"><b>' + liftLabel + '</b><span class="tiny">lift progress</span></div>';
   }
-  function paintLifts(view) {
-    var rows = liftDeltas().slice(0, 8);
-    var card = view.querySelector("#liftPct");
-    if (!card) {
-      card = document.createElement("div");
-      card.id = "liftPct";
-      card.className = "card";
-    }
-    if (!rows.length) {
-      card.innerHTML = '<div class="tiny">By lift</div><div class="tiny" style="margin-top:8px">Need two logged sessions on a lift to show %.</div>';
-    } else {
-      var html = '<div class="tiny">By lift</div>';
-      rows.forEach(function (r) {
-        var sign = r.pct >= 0 ? "+" : "";
-        var col = r.pct > 0.5 ? "#b7e39a" : r.pct < -0.5 ? "#ff6b3d" : "var(--muted)";
-        html += '<div class="row space" style="margin-top:10px"><div class="grow">' + shortName(r.n) + '<div class="tiny">' + r.prev + " → " + r.now + ' kg</div></div><div style="font-weight:700;color:' + col + '">' + sign + r.pct.toFixed(0) + "%</div></div>";
-      });
-      card.innerHTML = html;
-    }
-    view.appendChild(card);
+  function paintPrPct() {
+    var view = document.getElementById("view-progress");
+    if (!view || !view.classList.contains("active")) return;
+    var map = {};
+    liftDeltas().forEach(function (r) { map[r.n] = r; });
+    Array.prototype.slice.call(view.querySelectorAll(".card")).forEach(function (card) {
+      if (card.querySelector(".pr-pct")) return;
+      var nameEl = card.querySelector(".ex-name");
+      if (!nameEl) return;
+      var r = map[nameEl.textContent.trim()];
+      if (!r) return;
+      var sign = r.pct >= 0 ? "+" : "";
+      var col = r.pct > 0.5 ? "#b7e39a" : r.pct < -0.5 ? "#ff6b3d" : "var(--muted)";
+      var line = document.createElement("div");
+      line.className = "row space pr-pct";
+      line.style.marginTop = "8px";
+      line.innerHTML = '<span class="tiny">vs last ' + r.prev + " → " + r.now + ' kg</span><span style="font-weight:700;color:' + col + '">' + sign + r.pct.toFixed(0) + "%</span>";
+      card.appendChild(line);
+    });
   }
   function lastForTemplate(name, lifts) {
     var set = {};
@@ -170,12 +165,14 @@
     if (!view || !view.classList.contains("active") || lock) return;
     lock = true;
     paintDash(view);
+    var oldList = view.querySelector("#liftPct");
+    if (oldList) oldList.remove();
     var unit = document.getElementById("unitBtn"); if (unit) unit.style.display = "none";
     var instBtn = document.getElementById("installBtn"); if (instBtn) instBtn.style.display = "none";
     var homeInst = document.getElementById("homeInstall"); if (homeInst) homeInst.remove();
     var hint = view.querySelector("#iosHint"); if (hint) hint.style.display = "none";
     var empty = view.querySelector("[data-act='start-fresh']");
-    if (empty) { empty.textContent = "New session"; empty.className = "btn ghost"; }
+    if (empty) empty.style.display = "none";
     var repeat = view.querySelector("[data-act='repeat-last']");
     if (repeat) repeat.remove();
     Array.prototype.slice.call(view.querySelectorAll("button, .tiny")).forEach(function (el) {
@@ -195,12 +192,11 @@
       lab.replaceWith(head);
     });
     bindTemplates(view);
-    paintLifts(view);
     setTimeout(function () { lock = false; }, 0);
   }
   function schedule() {
     if (timer) return;
-    timer = setTimeout(function () { timer = null; polishHome(); }, 80);
+    timer = setTimeout(function () { timer = null; polishHome(); paintPrPct(); }, 80);
   }
   document.addEventListener("click", function (e) {
     var card = e.target.closest("#view-home [data-tpl-id]");
@@ -224,8 +220,11 @@
     if (e.target.id === "modal") e.target.classList.remove("show");
   }, true);
   setTimeout(function () {
-    var n = document.getElementById("view-home");
-    if (n) new MutationObserver(schedule).observe(n, { childList: true });
+    ["view-home", "view-progress"].forEach(function (id) {
+      var n = document.getElementById(id);
+      if (n) new MutationObserver(schedule).observe(n, { childList: true });
+    });
     polishHome();
+    paintPrPct();
   }, 400);
 })();
