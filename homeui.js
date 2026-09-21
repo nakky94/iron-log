@@ -239,10 +239,9 @@
   function polishHome() {
     var view = document.getElementById("view-home");
     if (!view || !view.classList.contains("active") || lock) return;
+    if (!view.querySelector(".stats") && !view.querySelector(".card")) return;
     lock = true;
     paintDash(view);
-    var oldList = view.querySelector("#liftPct");
-    if (oldList) oldList.remove();
     var unit = document.getElementById("unitBtn"); if (unit) unit.style.display = "none";
     var instBtn = document.getElementById("installBtn"); if (instBtn) instBtn.style.display = "none";
     var homeInst = document.getElementById("homeInstall"); if (homeInst) homeInst.remove();
@@ -269,11 +268,12 @@
     });
     bindTemplates(view);
     paintFeed(view);
+    view.classList.add("ready");
     setTimeout(function () { lock = false; }, 0);
   }
   function schedule() {
     if (timer) return;
-    timer = setTimeout(function () { timer = null; polishHome(); paintPrPct(); }, 80);
+    timer = setTimeout(function () { timer = null; polishHome(); paintPrPct(); }, 50);
   }
   document.addEventListener("click", function (e) {
     var card = e.target.closest("#view-home [data-tpl-id]");
@@ -296,12 +296,14 @@
     }
     if (e.target.id === "modal") e.target.classList.remove("show");
   }, true);
-  setTimeout(function () {
-    ["view-home", "view-progress"].forEach(function (id) {
-      var n = document.getElementById(id);
-      if (n) new MutationObserver(schedule).observe(n, { childList: true });
-    });
+  function boot() {
+    var n = document.getElementById("view-home");
+    if (n) new MutationObserver(schedule).observe(n, { childList: true });
+    var p = document.getElementById("view-progress");
+    if (p) new MutationObserver(schedule).observe(p, { childList: true });
     polishHome();
     paintPrPct();
-  }, 400);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
 })();
