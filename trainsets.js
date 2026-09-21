@@ -1,5 +1,5 @@
 (function () {
-  var restLeft = 0, restTick = null, sessTick = null, pressTimer = null;
+  var restUntil = 0, restTick = null, sessTick = null, pressTimer = null, restChip = null;
   function load(k, fb) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } }
   function loadSess() { return load("il_session", null); }
   function saveSess(s) { localStorage.setItem("il_session", JSON.stringify(s)); }
@@ -44,7 +44,7 @@
     saveSess(s);
   }
   function fmtClock(sec) {
-    sec = Math.max(0, sec);
+    sec = Math.max(0, Math.floor(sec));
     var m = Math.floor(sec / 60), s = String(sec % 60);
     if (s.length < 2) s = "0" + s;
     return m + ":" + s;
@@ -65,35 +65,45 @@
     var ov = document.getElementById("timer");
     if (ov) ov.classList.remove("show");
   }
+  function restLeft() {
+    return Math.max(0, Math.ceil((restUntil - Date.now()) / 1000));
+  }
+  function paintRest() {
+    if (!restChip || !restChip.isConnected) return false;
+    var left = restLeft();
+    var label = "Rest  " + fmtClock(left) + "   skip";
+    if (restChip.getAttribute("data-t") !== label) {
+      restChip.setAttribute("data-t", label);
+      restChip.innerHTML = 'Rest <span class="rest-num">' + fmtClock(left) + "</span> skip";
+    }
+    if (left <= 10) restChip.classList.add("warn");
+    else restChip.classList.remove("warn");
+    if (left <= 0) {
+      clearInterval(restTick); restTick = null; restUntil = 0;
+      restChip.remove(); restChip = null;
+      if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+      return false;
+    }
+    return true;
+  }
   function startInlineRest(card, sec) {
-    restLeft = sec || restSec();
     hideModalTimer();
-    var chip = card && card.querySelector(".rest-chip");
-    if (!chip && card) {
-      chip = document.createElement("button");
-      chip.type = "button";
-      chip.className = "rest-chip";
-      chip.setAttribute("data-act", "skip-inline-rest");
-      card.appendChild(chip);
-    }
+    if (!card) return;
+    restUntil = Date.now() + (sec || restSec()) * 1000;
     Array.prototype.slice.call(document.querySelectorAll(".rest-chip")).forEach(function (c) {
-      if (c !== chip) c.remove();
+      if (c.parentNode !== card) c.remove();
     });
-    function tick() {
-      if (!chip) return;
-      chip.textContent = "Rest " + fmtClock(restLeft) + "  ·  skip";
-      chip.classList.toggle("warn", restLeft <= 10);
-      if (restLeft <= 0) {
-        clearInterval(restTick);
-        chip.remove();
-        if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
-        return;
-      }
-      restLeft -= 1;
+    restChip = card.querySelector(".rest-chip");
+    if (!restChip) {
+      restChip = document.createElement("button");
+      restChip.type = "button";
+      restChip.className = "rest-chip";
+      restChip.setAttribute("data-act", "skip-inline-rest");
+      card.appendChild(restChip);
     }
+    paintRest();
     clearInterval(restTick);
-    tick();
-    restTick = setInterval(tick, 1000);
+    restTick = setInterval(paintRest, 200);
   }
   function sessionStats() {
     var s = loadSess() || { exercises: [], ts: Date.now() };
@@ -194,7 +204,7 @@
         if (!row.querySelector(".ghost-set")) {
           var g = document.createElement("div");
           g.className = "ghost-set";
-          g.textContent = (prev.w || "—") + " × " + (prev.r || "—");
+          g.textContent = (prev.w || "\u2014") + " \u00d7 " + (prev.r || "\u2014");
           row.appendChild(g);
         }
       }
@@ -211,6 +221,10 @@
         row.appendChild(b);
       }
     });
+    if (restUntil > Date.now()) {
+      var live = document.querySelector(".rest-chip");
+      if (live) restChip = live;
+    }
   }
   function deleteSet(i, si) {
     var s = loadSess();
@@ -219,7 +233,7 @@
     var sets = ex.sets || [];
     var set = sets[si] || {};
     var label = (si === 0 ? "warm-up" : "set " + si) + (ex.n ? " of " + ex.n : "");
-    if (set.w || set.r) label += " (" + (set.w || "0") + " kg × " + (set.r || "0") + ")";
+    if (set.w || set.r) label += " (" + (set.w || "0") + " kg \u00d7 " + (set.r || "0") + ")";
     if (!confirm("Delete " + label + "?")) return;
     if (sets.length <= 1) sets[0] = { id: uid(), w: "", r: "", done: false };
     else sets.splice(si, 1);
@@ -255,10 +269,10 @@
       return;
     }
     if (e.target.closest("[data-act='skip-inline-rest']")) {
-      restLeft = 0;
-      clearInterval(restTick);
-      var chip = e.target.closest(".rest-chip");
-      if (chip) chip.remove();
+      restUntil = 0;
+      clearInterval(restTick); restTick = null;
+      if (restChip) restChip.remove();
+      restChip = null;
       hideModalTimer();
       return;
     }
@@ -272,14 +286,15 @@
         var s = loadSess();
         var set = s && s.exercises && s.exercises[i] && s.exercises[i].sets[si];
         if (set && set.done) {
-          startInlineRest(card, restSec());
+          var fresh = document.getElementById("view-workout");
+          var cards = fresh ? fresh.querySelectorAll(".card") : [];
+          startInlineRest(cards[i] || card, restSec());
           var name = s.exercises[i].n;
           var w = Number(set.w) || 0;
           var prev = bestEver(name);
-          if (w && w > prev) toast("New best " + name.replace(/^Dumbbell\s/, "") + " · " + w + " kg");
+          if (w && w > prev) toast("New best " + name.replace(/^Dumbbell\s/, "") + " \u00b7 " + w + " kg");
         }
-        enhance();
-      }, 30);
+      }, 40);
     }
     if (e.target.closest("[data-act='start-timer']")) {
       setTimeout(function () {
