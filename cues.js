@@ -51,18 +51,10 @@
   function polishHome() {
     var view = document.getElementById("view-home");
     if (!view || !view.classList.contains("active")) return;
-    var stats = view.querySelectorAll(".stat");
-    if (stats[1]) stats[1].classList.add("stat-accent");
-    stats.forEach(function (el) {
-      var t = el.querySelector(".tiny");
-      if (!t) return;
-      var raw = t.textContent.toLowerCase();
-      if (raw.indexOf("session") >= 0) t.textContent = "sessions this week";
-      else if (raw.indexOf("set") >= 0) t.textContent = "sets this week";
-      else if (raw.indexOf("template") >= 0) t.textContent = "templates";
-    });
     var inst = document.getElementById("homeInstall");
     if (inst) inst.remove();
+    var hint = view.querySelector("#iosHint");
+    if (hint) hint.style.display = "none";
   }
   function paintBackup() {
     var view = document.getElementById("view-home");
