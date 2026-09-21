@@ -68,11 +68,12 @@
     .timer-box{width:min(360px,100%);background:var(--card);border-radius:24px;padding:28px 20px;text-align:center}
     .clock{font-size:clamp(56px,18vw,84px);line-height:1;color:var(--accent);font-weight:700;letter-spacing:-.04em}
     .clock.warn{color:var(--warn)}
-    .stat{text-align:center;background:var(--card);border-radius:14px;padding:10px 6px}
-    .stat b{display:block;font-size:20px;color:var(--text);letter-spacing:-.04em;font-weight:700}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 10px;align-items:stretch}
+    .stat{text-align:center;background:var(--card);border-radius:14px;padding:12px 6px;min-height:76px;display:flex;flex-direction:column;justify-content:center;align-items:center}
+    .stat b{display:block;font-size:20px;line-height:1.1;color:var(--text);letter-spacing:-.04em;font-weight:700}
+    .stat .tiny{margin-top:4px;font-size:11px;line-height:1.2;height:14px;overflow:hidden;white-space:nowrap;max-width:100%}
     .stat-accent{background:#1d1a0a}
     .stat-accent b{color:var(--accent)}
-    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 10px}
     .bar{height:5px;background:#232323;border-radius:99px;overflow:hidden;margin-top:6px}
     .bar>i{display:block;height:100%;background:var(--accent)}
     .vol-row{margin-top:10px}
