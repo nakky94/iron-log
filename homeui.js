@@ -61,8 +61,7 @@
     Object.keys(map).forEach(function (n) {
       var a = map[n];
       if (a.length < 2 || !a[1].w) return;
-      var pct = (a[0].w - a[1].w) / a[1].w * 100;
-      out.push({ n: n, now: a[0].w, prev: a[1].w, pct: pct, ts: a[0].ts });
+      out.push({ n: n, now: a[0].w, prev: a[1].w, pct: (a[0].w - a[1].w) / a[1].w * 100, ts: a[0].ts });
     });
     out.sort(function (a, b) { return Math.abs(b.pct) - Math.abs(a.pct); });
     return out;
@@ -84,8 +83,7 @@
       var pct = Math.round((tw - lw) / lw * 100);
       delta = (pct >= 0 ? "+" : "") + pct + "%";
     }
-    var rows = liftDeltas();
-    var avg = avgPct(rows);
+    var avg = avgPct(liftDeltas());
     var liftLabel = avg == null ? "—" : (avg >= 0 ? "+" : "") + avg.toFixed(0) + "%";
     box.setAttribute("data-dash", "1");
     box.innerHTML =
@@ -94,11 +92,13 @@
       '<div class="stat"><b>' + liftLabel + '</b><span class="tiny">lift progress</span></div>';
   }
   function paintLifts(view) {
-    if (view.querySelector("#liftPct")) return;
     var rows = liftDeltas().slice(0, 8);
-    var card = document.createElement("div");
-    card.id = "liftPct";
-    card.className = "card";
+    var card = view.querySelector("#liftPct");
+    if (!card) {
+      card = document.createElement("div");
+      card.id = "liftPct";
+      card.className = "card";
+    }
     if (!rows.length) {
       card.innerHTML = '<div class="tiny">By lift</div><div class="tiny" style="margin-top:8px">Need two logged sessions on a lift to show %.</div>';
     } else {
@@ -110,11 +110,7 @@
       });
       card.innerHTML = html;
     }
-    var stats = view.querySelector(".stats");
-    var nag = view.querySelector("#backupNag");
-    if (nag) nag.insertAdjacentElement("afterend", card);
-    else if (stats) stats.insertAdjacentElement("afterend", card);
-    else view.insertBefore(card, view.firstChild);
+    view.appendChild(card);
   }
   function lastForTemplate(name, lifts) {
     var set = {};
@@ -146,13 +142,34 @@
     var sheet = document.getElementById("sheet"), modal = document.getElementById("modal");
     if (sheet && modal) { sheet.innerHTML = html; modal.classList.add("show"); }
   }
+  function bindTemplates(view) {
+    var editOn = !!load("il_tpl_edit", false);
+    Array.prototype.slice.call(view.querySelectorAll("[data-act='load-routine']")).forEach(function (btn) {
+      if (btn.closest("#sheet")) return;
+      var card = btn.closest(".card"); if (!card) return;
+      var id = btn.getAttribute("data-id");
+      if (id) card.setAttribute("data-tpl-id", id);
+      btn.style.display = "none";
+      var del = card.querySelector("[data-act='del-routine']");
+      if (del) del.style.display = editOn ? "" : "none";
+      card.style.cursor = "pointer";
+      var nameEl = card.querySelector(".ex-name");
+      var name = nameEl ? nameEl.textContent : "";
+      var routines = load("il_routines", []);
+      var match = routines.filter(function (r) { return r.id === id || r.name === name; })[0];
+      var extra = lastForTemplate(name, match ? (match.exercises || []).map(function (e) { return e.n; }) : []);
+      var meta = card.querySelector(".tiny");
+      if (extra && meta && !meta.getAttribute("data-last")) {
+        meta.setAttribute("data-last", "1");
+        meta.textContent = extra;
+      }
+    });
+  }
   function polishHome() {
     var view = document.getElementById("view-home");
     if (!view || !view.classList.contains("active") || lock) return;
-    paintDash(view);
-    paintLifts(view);
-    if (view.getAttribute("data-homeui-ready") === "1" && view.querySelector("[data-act='repeat-last']")) return;
     lock = true;
+    paintDash(view);
     var unit = document.getElementById("unitBtn"); if (unit) unit.style.display = "none";
     var instBtn = document.getElementById("installBtn"); if (instBtn) instBtn.style.display = "none";
     var homeInst = document.getElementById("homeInstall"); if (homeInst) homeInst.remove();
@@ -160,11 +177,7 @@
     var empty = view.querySelector("[data-act='start-fresh']");
     if (empty) { empty.textContent = "New session"; empty.className = "btn ghost"; }
     var repeat = view.querySelector("[data-act='repeat-last']");
-    if (repeat) {
-      var last = workouts()[0];
-      repeat.className = "btn";
-      if (last) repeat.textContent = "Repeat " + fmtDay(last.ts);
-    }
+    if (repeat) repeat.remove();
     Array.prototype.slice.call(view.querySelectorAll("button, .tiny")).forEach(function (el) {
       var t = (el.textContent || "").trim();
       if (t === "Quick add from gear" || t === "Browse dumbbells and machines" || t === "Install app" || t === "Install on iPhone") el.style.display = "none";
@@ -181,32 +194,8 @@
       head.innerHTML = '<div class="tiny">Templates</div><button class="text-link" type="button" data-act="toggle-tpl-edit">' + (editOn ? "Done" : "Edit") + "</button>";
       lab.replaceWith(head);
     });
-    Array.prototype.slice.call(view.querySelectorAll("[data-act='load-routine']")).forEach(function (btn) {
-      var card = btn.closest(".card"); if (!card || card.getAttribute("data-homeui")) return;
-      card.setAttribute("data-homeui", "1");
-      var del = card.querySelector("[data-act='del-routine']");
-      btn.style.display = "none";
-      if (del) del.style.display = editOn ? "" : "none";
-      card.style.cursor = "pointer";
-      var id = btn.getAttribute("data-id");
-      var nameEl = card.querySelector(".ex-name");
-      var name = nameEl ? nameEl.textContent : "";
-      var routines = load("il_routines", []);
-      var match = routines.filter(function (r) { return r.id === id || r.name === name; })[0];
-      var extra = lastForTemplate(name, match ? (match.exercises || []).map(function (e) { return e.n; }) : []);
-      var meta = card.querySelector(".tiny");
-      if (extra && meta && !meta.getAttribute("data-last")) {
-        meta.setAttribute("data-last", "1");
-        meta.textContent = extra;
-      }
-      card.addEventListener("click", function (ev) {
-        if (ev.target.closest("[data-act='del-routine'], [data-act='toggle-tpl-edit']")) return;
-        ev.preventDefault();
-        ev.stopPropagation();
-        openTemplate(id || (match && match.id));
-      });
-    });
-    view.setAttribute("data-homeui-ready", "1");
+    bindTemplates(view);
+    paintLifts(view);
     setTimeout(function () { lock = false; }, 0);
   }
   function schedule() {
@@ -214,24 +203,26 @@
     timer = setTimeout(function () { timer = null; polishHome(); }, 80);
   }
   document.addEventListener("click", function (e) {
+    var card = e.target.closest("#view-home [data-tpl-id]");
+    if (card && !e.target.closest("[data-act='del-routine'], [data-act='toggle-tpl-edit']")) {
+      e.preventDefault();
+      e.stopPropagation();
+      openTemplate(card.getAttribute("data-tpl-id"));
+      return;
+    }
     if (e.target.closest("[data-act='toggle-tpl-edit']")) {
       try {
         var cur = !!JSON.parse(localStorage.getItem("il_tpl_edit") || "false");
         localStorage.setItem("il_tpl_edit", JSON.stringify(!cur));
       } catch (err) { localStorage.setItem("il_tpl_edit", "true"); }
-      var view = document.getElementById("view-home");
-      if (view) view.removeAttribute("data-homeui-ready");
       document.querySelector('.nav button[data-view="home"]').click();
     }
     if (e.target.closest("#sheet [data-act='load-routine']")) {
       var modal = document.getElementById("modal");
       if (modal) modal.classList.remove("show");
     }
-  });
-  document.addEventListener("click", function (e) {
-    var bg = e.target.id === "modal" ? e.target : null;
-    if (bg) bg.classList.remove("show");
-  });
+    if (e.target.id === "modal") e.target.classList.remove("show");
+  }, true);
   setTimeout(function () {
     var n = document.getElementById("view-home");
     if (n) new MutationObserver(schedule).observe(n, { childList: true });
