@@ -10,9 +10,6 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root{
       --bg:#0c0c0c; --bg-2:#141414; --card:#171717; --card-2:#1c1c1c;
@@ -22,7 +19,7 @@
       --nav-h:64px;
     }
     *{box-sizing:border-box;margin:0;padding:0}
-    html,body{min-height:100dvh;background:var(--bg);color:var(--text);font-family:Outfit,system-ui,sans-serif}
+    html,body{min-height:100dvh;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
     body{padding-bottom:calc(var(--nav-h) + var(--safe-b) + 28px);-webkit-font-smoothing:antialiased}
     button,input,select,textarea{font:inherit;color:inherit}
     button{cursor:pointer;border:0;background:none}
@@ -31,8 +28,7 @@
     .sub{color:var(--muted);font-size:12px;letter-spacing:.02em;font-weight:500}
     .brand{display:flex;align-items:center;gap:10px;margin-top:4px;font-size:clamp(18px,5vw,22px);font-weight:700;letter-spacing:-.03em;color:var(--text)}
     .brand .mark{width:18px;height:18px;background:var(--accent);border-radius:5px;flex:0 0 18px}
-    .unit-label{font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--muted);padding:4px 0;text-transform:none}
-    #installBtn{display:none !important}
+    .unit-label,#unitBtn,#installBtn,#homeInstall{display:none !important}
     .view{display:none;padding:6px 16px calc(var(--nav-h) + var(--safe-b) + 28px)}
     .view.active{display:block}
     .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:520px;display:grid;grid-template-columns:repeat(5,1fr);background:#0c0c0c;border-top:1px solid #1a1a1a;padding:8px 8px calc(8px + var(--safe-b));z-index:30;min-height:calc(var(--nav-h) + var(--safe-b))}
@@ -42,7 +38,7 @@
     .nav button.active span{display:block}
     .nav button.active svg{color:var(--accent)}
     .nav svg{width:22px;height:22px}
-    .card{background:var(--card);border:0;border-radius:var(--radius);padding:16px;margin-bottom:12px;container-type:inline-size}
+    .card{background:var(--card);border:0;border-radius:var(--radius);padding:16px;margin-bottom:12px}
     .row{display:flex;gap:8px;align-items:center}
     .space{justify-content:space-between}
     .grow{flex:1;min-width:0}
@@ -87,34 +83,11 @@
     .modal-bg.show{display:flex}
     .sheet{width:100%;max-width:520px;background:#161616;border-radius:22px 22px 0 0;padding:16px 16px calc(20px + var(--safe-b));max-height:88dvh;overflow:auto}
     .grab{width:42px;height:4px;background:#3a3a3a;border-radius:99px;margin:0 auto 14px}
-    .install-banner{display:none}
-    .install-banner.show{display:block}
-    @container (max-width: 340px){
-      .set-grid{grid-template-columns:24px 1fr 1fr 40px}
-    }
-    @media (orientation:landscape) and (max-height:500px){
-      :root{--nav-h:52px}
-      header.top{padding:6px 14px 4px}
-      .brand{font-size:16px;margin-top:0}
-      .sub{display:none}
-      .nav{padding:4px 6px calc(4px + var(--safe-b))}
-      .nav svg{width:18px;height:18px}
-    }
     @media (min-width:800px){
       .app{max-width:880px}
       .nav{max-width:880px}
-      .sheet{max-width:640px}
-      #view-progress.active{
-        display:grid;
-        grid-template-columns:1fr 1fr;
-        gap:0 12px;
-        align-items:start;
-      }
-      #view-progress > :first-child,
-      #view-progress > input,
-      #view-progress > .chips{
-        grid-column:1 / -1;
-      }
+      #view-progress.active{display:grid;grid-template-columns:1fr 1fr;gap:0 12px;align-items:start}
+      #view-progress > :first-child{grid-column:1 / -1}
     }
   </style>
 </head>
@@ -124,10 +97,6 @@
       <div>
         <div class="sub" id="dateLabel"></div>
         <div class="brand"><i class="mark"></i>Gym Log</div>
-      </div>
-      <div class="row">
-        <button class="btn sm ghost" type="button" id="installBtn">Install</button>
-        <div class="unit-label" id="unitBtn">kg</div>
       </div>
     </header>
     <section class="view active" id="view-home"></section>
@@ -158,12 +127,12 @@
     </div>
   </div>
   <div class="modal-bg" id="modal"><div class="sheet" id="sheet"></div></div>
-  <script src="suggest.js"></script>
-  <script src="app.js"></script>
-  <script src="extra.js"></script>
-  <script src="more.js"></script>
-  <script src="cues.js"></script>
-  <script src="backup.js"></script>
-  <script src="homeui.js"></script>
+  <script src="suggest.js" defer></script>
+  <script src="app.js" defer></script>
+  <script src="extra.js" defer></script>
+  <script src="more.js" defer></script>
+  <script src="cues.js" defer></script>
+  <script src="backup.js" defer></script>
+  <script src="homeui.js" defer></script>
 </body>
 </html>
