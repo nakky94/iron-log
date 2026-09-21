@@ -1,6 +1,8 @@
 (function () {
   function load(k, fb) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } }
+  function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
   function workouts() { return load("il_workouts", []); }
+  function favs() { return load("il_fav_tpls", []); }
   function fmtDay(ts) {
     return new Date(ts).toLocaleDateString(undefined, { day: "numeric", month: "short" });
   }
@@ -215,6 +217,8 @@
   }
   function bindTemplates(view) {
     var editOn = !!load("il_tpl_edit", false);
+    var pinned = favs();
+    var hasFavs = pinned.length > 0;
     Array.prototype.slice.call(view.querySelectorAll("[data-act='load-routine']")).forEach(function (btn) {
       if (btn.closest("#sheet")) return;
       var card = btn.closest(".card"); if (!card) return;
@@ -224,6 +228,24 @@
       var del = card.querySelector("[data-act='del-routine']");
       if (del) del.style.display = editOn ? "" : "none";
       card.style.cursor = "pointer";
+      var on = pinned.indexOf(id) !== -1;
+      if (!card.querySelector("[data-act='fav-tpl']")) {
+        var star = document.createElement("button");
+        star.type = "button";
+        star.setAttribute("data-act", "fav-tpl");
+        star.setAttribute("data-id", id);
+        star.className = "text-link";
+        star.style.cssText = "font-size:18px;line-height:1;min-height:0;padding:0 6px 0 0;color:" + (on ? "var(--accent)" : "#5a5a5a");
+        star.textContent = on ? "\u2605" : "\u2606";
+        var row = card.querySelector(".row.space") || card;
+        row.insertBefore(star, row.firstChild);
+      } else {
+        var existing = card.querySelector("[data-act='fav-tpl']");
+        existing.textContent = on ? "\u2605" : "\u2606";
+        existing.style.color = on ? "var(--accent)" : "#5a5a5a";
+      }
+      if (hasFavs && !editOn && !on) card.style.display = "none";
+      else card.style.display = "";
       var nameEl = card.querySelector(".ex-name");
       var name = nameEl ? nameEl.textContent : "";
       var routines = load("il_routines", []);
@@ -235,6 +257,8 @@
         meta.textContent = extra;
       }
     });
+    var headLab = view.querySelector(".sec-head .tiny");
+    if (headLab) headLab.textContent = hasFavs && !editOn ? "Pinned" : "Templates";
   }
   function polishHome() {
     var view = document.getElementById("view-home");
@@ -258,7 +282,7 @@
     if (vol && /No sets logged this week/i.test(vol.textContent)) vol.style.display = "none";
     var editOn = !!load("il_tpl_edit", false);
     Array.prototype.slice.call(view.querySelectorAll(".tiny")).forEach(function (lab) {
-      if ((lab.textContent || "").trim() !== "Templates") return;
+      if ((lab.textContent || "").trim() !== "Templates" && (lab.textContent || "").trim() !== "Pinned") return;
       if (lab.parentElement && lab.parentElement.classList.contains("sec-head")) return;
       var head = document.createElement("div");
       head.className = "row space sec-head";
@@ -275,9 +299,27 @@
     if (timer) return;
     timer = setTimeout(function () { timer = null; polishHome(); paintPrPct(); }, 50);
   }
+  function reloadHome() {
+    var btn = document.querySelector('.nav button[data-view="home"]');
+    if (btn) btn.click();
+  }
   document.addEventListener("click", function (e) {
+    var star = e.target.closest("[data-act='fav-tpl']");
+    if (star) {
+      e.preventDefault();
+      e.stopPropagation();
+      var id = star.getAttribute("data-id");
+      var a = favs();
+      var i = a.indexOf(id);
+      if (i >= 0) a.splice(i, 1);
+      else a.push(id);
+      save("il_fav_tpls", a);
+      var view = document.getElementById("view-home");
+      if (view) bindTemplates(view);
+      return;
+    }
     var card = e.target.closest("#view-home [data-tpl-id]");
-    if (card && !e.target.closest("[data-act='del-routine'], [data-act='toggle-tpl-edit']")) {
+    if (card && !e.target.closest("[data-act='del-routine'], [data-act='toggle-tpl-edit'], [data-act='fav-tpl']")) {
       e.preventDefault();
       e.stopPropagation();
       openTemplate(card.getAttribute("data-tpl-id"));
@@ -288,7 +330,7 @@
         var cur = !!JSON.parse(localStorage.getItem("il_tpl_edit") || "false");
         localStorage.setItem("il_tpl_edit", JSON.stringify(!cur));
       } catch (err) { localStorage.setItem("il_tpl_edit", "true"); }
-      document.querySelector('.nav button[data-view="home"]').click();
+      reloadHome();
     }
     if (e.target.closest("#sheet [data-act='load-routine']")) {
       var modal = document.getElementById("modal");
