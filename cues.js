@@ -61,15 +61,8 @@
       else if (raw.indexOf("set") >= 0) t.textContent = "sets this week";
       else if (raw.indexOf("template") >= 0) t.textContent = "templates";
     });
-    if (!view.querySelector("#homeInstall") && document.getElementById("installBtn") && document.getElementById("installBtn").style.display !== "none") {
-      var link = document.createElement("button");
-      link.id = "homeInstall";
-      link.className = "text-link";
-      link.type = "button";
-      link.textContent = "Install app";
-      link.addEventListener("click", function () { document.getElementById("installBtn").click(); });
-      view.appendChild(link);
-    }
+    var inst = document.getElementById("homeInstall");
+    if (inst) inst.remove();
   }
   function paintBackup() {
     var view = document.getElementById("view-home");
