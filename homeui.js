@@ -41,24 +41,32 @@
     if (days < 8) return days + "d ago";
     return fmtDay(ts);
   }
-  function liftDeltas() {
+  function liftSeries() {
     var map = {};
-    workouts().forEach(function (w) {
+    workouts().slice().sort(function (a, b) { return a.ts - b.ts; }).forEach(function (w) {
       (w.exercises || []).forEach(function (e) {
         var best = 0;
         (e.sets || []).forEach(function (s) { if (s.done && Number(s.w) > best) best = Number(s.w); });
         if (!best) return;
         if (!map[e.n]) map[e.n] = [];
         var arr = map[e.n];
-        if (arr.length && Math.abs(arr[arr.length - 1].w - best) < 0.05 && arr[arr.length - 1].ts === w.ts) return;
-        if (arr.length < 2) arr.push({ w: best, ts: w.ts });
+        if (arr.length && arr[arr.length - 1].ts === w.ts) {
+          if (best > arr[arr.length - 1].w) arr[arr.length - 1].w = best;
+          return;
+        }
+        arr.push({ ts: w.ts, w: best });
       });
     });
+    return map;
+  }
+  function liftDeltas() {
     var out = [];
-    Object.keys(map).forEach(function (n) {
-      var a = map[n];
-      if (a.length < 2 || !a[1].w) return;
-      out.push({ n: n, now: a[0].w, prev: a[1].w, pct: (a[0].w - a[1].w) / a[1].w * 100, ts: a[0].ts });
+    var series = liftSeries();
+    Object.keys(series).forEach(function (n) {
+      var a = series[n];
+      if (a.length < 2 || !a[a.length - 2].w) return;
+      var now = a[a.length - 1], prev = a[a.length - 2];
+      out.push({ n: n, now: now.w, prev: prev.w, pct: (now.w - prev.w) / prev.w * 100, ts: now.ts });
     });
     return out;
   }
@@ -67,6 +75,25 @@
     var s = 0;
     rows.forEach(function (r) { s += r.pct; });
     return s / rows.length;
+  }
+  function sparkSvg(pts) {
+    if (!pts || pts.length < 2) return "";
+    var w = 280, h = 56, pad = 6;
+    var max = Math.max.apply(null, pts.map(function (p) { return p.w; }));
+    var min = Math.min.apply(null, pts.map(function (p) { return p.w; }));
+    var span = Math.max(0.5, max - min);
+    var d = pts.map(function (p, i) {
+      var x = pts.length === 1 ? w / 2 : (i / (pts.length - 1)) * w;
+      var y = h - pad - ((p.w - min) / span) * (h - pad * 2);
+      return x.toFixed(1) + "," + y.toFixed(1);
+    }).join(" ");
+    var last = pts[pts.length - 1];
+    var lx = pts.length === 1 ? w / 2 : w;
+    var ly = h - pad - ((last.w - min) / span) * (h - pad * 2);
+    return '<svg class="trend" viewBox="0 0 ' + w + ' ' + h + '" width="100%" height="56" preserveAspectRatio="none">' +
+      '<polyline fill="none" stroke="#FFD400" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" points="' + d + '" />' +
+      '<circle cx="' + lx.toFixed(1) + '" cy="' + ly.toFixed(1) + '" r="3.2" fill="#FFD400" /></svg>' +
+      '<div class="row space"><span class="tiny">' + fmtDay(pts[0].ts) + '</span><span class="tiny">' + pts.length + ' sessions · ' + fmtDay(last.ts) + '</span></div>';
   }
   function paintDash(view) {
     var box = view.querySelector(".stats");
@@ -90,13 +117,27 @@
   function paintPrPct() {
     var view = document.getElementById("view-progress");
     if (!view || !view.classList.contains("active")) return;
+    Array.prototype.slice.call(view.querySelectorAll(".chart-card")).forEach(function (el) { el.style.display = "none"; });
     var map = {};
     liftDeltas().forEach(function (r) { map[r.n] = r; });
+    var series = liftSeries();
     Array.prototype.slice.call(view.querySelectorAll(".card")).forEach(function (card) {
-      if (card.querySelector(".pr-pct")) return;
+      if (card.classList.contains("chart-card")) return;
       var nameEl = card.querySelector(".ex-name");
       if (!nameEl) return;
-      var r = map[nameEl.textContent.trim()];
+      var name = nameEl.textContent.trim();
+      var pts = series[name] || [];
+      if (!card.querySelector(".trend-wrap") && pts.length >= 2) {
+        var wrap = document.createElement("div");
+        wrap.className = "trend-wrap";
+        wrap.style.marginTop = "10px";
+        wrap.innerHTML = sparkSvg(pts);
+        var bar = card.querySelector(".bar");
+        if (bar) bar.style.display = "none";
+        card.appendChild(wrap);
+      }
+      if (card.querySelector(".pr-pct")) return;
+      var r = map[name];
       if (!r) return;
       var sign = r.pct >= 0 ? "+" : "";
       var col = r.pct > 0.5 ? "#b7e39a" : r.pct < -0.5 ? "#ff6b3d" : "var(--muted)";
