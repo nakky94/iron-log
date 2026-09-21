@@ -29,7 +29,7 @@
         var grid = card.querySelector(".set-grid");
         if (grid) card.insertBefore(box, grid); else card.appendChild(box);
       }
-      box.innerHTML = cue.note ? '<div class="tiny" style="text-transform:none;letter-spacing:0">' + esc(cue.note) + "</div>" : "";
+      box.innerHTML = cue.note ? '<div class="tiny">' + esc(cue.note) + "</div>" : "";
     });
   }
   function openEditor(i) {
@@ -48,17 +48,39 @@
     var last = Number(load("il_export_ts", 0)) || 0;
     return !last || (Date.now() - last > 7 * 864e5);
   }
+  function polishHome() {
+    var view = document.getElementById("view-home");
+    if (!view || !view.classList.contains("active")) return;
+    var stats = view.querySelectorAll(".stat");
+    if (stats[1]) stats[1].classList.add("stat-accent");
+    stats.forEach(function (el) {
+      var t = el.querySelector(".tiny");
+      if (!t) return;
+      var raw = t.textContent.toLowerCase();
+      if (raw.indexOf("session") >= 0) t.textContent = "sessions this week";
+      else if (raw.indexOf("set") >= 0) t.textContent = "sets this week";
+      else if (raw.indexOf("template") >= 0) t.textContent = "templates";
+    });
+    if (!view.querySelector("#homeInstall") && document.getElementById("installBtn") && document.getElementById("installBtn").style.display !== "none") {
+      var link = document.createElement("button");
+      link.id = "homeInstall";
+      link.className = "text-link";
+      link.type = "button";
+      link.textContent = "Install app";
+      link.addEventListener("click", function () { document.getElementById("installBtn").click(); });
+      view.appendChild(link);
+    }
+  }
   function paintBackup() {
     var view = document.getElementById("view-home");
     if (!view || !view.classList.contains("active")) return;
     var old = view.querySelector("#backupNag");
     if (!exportDue()) { if (old) old.remove(); return; }
     if (old) return;
-    var last = Number(load("il_export_ts", 0)) || 0;
     var card = document.createElement("div");
     card.id = "backupNag";
-    card.className = "card";
-    card.innerHTML = '<div class="tiny">Weekly backup</div><div style="margin:8px 0 12px">Export JSON so a cleared browser does not wipe the log.' + (last ? " Last export was over a week ago." : " No export saved yet.") + '</div><button class="btn" type="button" data-act="export-json">Export JSON now</button><div style="height:8px"></div><button class="btn ghost" type="button" data-act="snooze-export">Remind me next week</button>';
+    card.className = "strip";
+    card.innerHTML = '<span>Backup due</span><span class="row" style="gap:10px"><button class="text-link" type="button" data-act="export-json">Export</button><button class="text-link muted" type="button" data-act="snooze-export">Later</button></span>';
     var stats = view.querySelector(".stats");
     if (stats) stats.insertAdjacentElement("afterend", card);
     else view.insertBefore(card, view.firstChild);
@@ -90,11 +112,11 @@
       var n2 = document.getElementById("backupNag"); if (n2) n2.remove();
     }
   });
-  var obs = new MutationObserver(function () { paintCues(); paintBackup(); });
+  var obs = new MutationObserver(function () { paintCues(); paintBackup(); polishHome(); });
   setTimeout(function () {
     ["view-workout", "view-home"].forEach(function (id) {
       var n = document.getElementById(id); if (n) obs.observe(n, { childList: true });
     });
-    paintCues(); paintBackup();
+    paintCues(); paintBackup(); polishHome();
   }, 700);
 })();
