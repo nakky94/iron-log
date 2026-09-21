@@ -15,9 +15,19 @@
     else s.exercises[i].sets[si].r = t.value;
     saveSess(s);
   }
+  function prettyMeta() {
+    var view = document.getElementById("view-workout");
+    if (!view) return;
+    Array.prototype.slice.call(view.querySelectorAll(".card .tiny")).forEach(function (el) {
+      var t = el.textContent || "";
+      if (!/dumbbell|machine/i.test(t)) return;
+      el.textContent = t.replace(/dumbbell/ig, "Dumbbell").replace(/machine/ig, "Machine");
+    });
+  }
   function enhance() {
     var view = document.getElementById("view-workout");
     if (!view || !view.classList.contains("active")) return;
+    prettyMeta();
     Array.prototype.slice.call(view.querySelectorAll(".set-grid")).forEach(function (row) {
       if (row.classList.contains("tiny")) {
         if (row.children.length === 4 && !row.querySelector("[data-col='del']")) {
