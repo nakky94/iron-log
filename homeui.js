@@ -47,6 +47,32 @@
     if (press && !legs) return "Press";
     return "Train";
   }
+  function shortName(n) {
+    return String(n || "").replace(/^Dumbbell\s/, "").replace(/\sMachine$/, "");
+  }
+  function liftDeltas() {
+    var map = {};
+    workouts().forEach(function (w) {
+      (w.exercises || []).forEach(function (e) {
+        var best = 0;
+        (e.sets || []).forEach(function (s) { if (s.done && Number(s.w) > best) best = Number(s.w); });
+        if (!best) return;
+        if (!map[e.n]) map[e.n] = [];
+        var arr = map[e.n];
+        if (arr.length && Math.abs(arr[arr.length - 1].w - best) < 0.05 && arr[arr.length - 1].ts === w.ts) return;
+        if (arr.length < 2) arr.push({ w: best, ts: w.ts });
+      });
+    });
+    var out = [];
+    Object.keys(map).forEach(function (n) {
+      var a = map[n];
+      if (a.length < 2 || !a[1].w) return;
+      var pct = (a[0].w - a[1].w) / a[1].w * 100;
+      out.push({ n: n, now: a[0].w, prev: a[1].w, pct: pct, ts: a[0].ts });
+    });
+    out.sort(function (a, b) { return Math.abs(b.pct) - Math.abs(a.pct); });
+    return out.slice(0, 8);
+  }
   function paintDash(view) {
     var box = view.querySelector(".stats");
     if (!box) return;
@@ -66,6 +92,29 @@
       '<div class="stat"><b>' + (last ? lastAgo(last.ts) : "—") + '</b><span class="tiny">last session</span></div>' +
       '<div class="stat stat-accent"><b>' + fmtVol(tw) + '</b><span class="tiny">week volume' + (delta ? " · " + delta : "") + '</span></div>' +
       '<div class="stat"><b>' + next + '</b><span class="tiny">up next</span></div>';
+  }
+  function paintLifts(view) {
+    if (view.querySelector("#liftPct")) return;
+    var rows = liftDeltas();
+    var card = document.createElement("div");
+    card.id = "liftPct";
+    card.className = "card";
+    if (!rows.length) {
+      card.innerHTML = '<div class="tiny">Lift progress</div><div class="tiny" style="margin-top:8px">Need two logged sessions on a lift to show %.</div>';
+    } else {
+      var html = '<div class="tiny">Lift progress</div>';
+      rows.forEach(function (r) {
+        var sign = r.pct >= 0 ? "+" : "";
+        var col = r.pct > 0.5 ? "#b7e39a" : r.pct < -0.5 ? "#ff6b3d" : "var(--muted)";
+        html += '<div class="row space" style="margin-top:10px"><div class="grow">' + shortName(r.n) + '<div class="tiny">' + r.prev + " → " + r.now + ' kg</div></div><div style="font-weight:700;color:' + col + '">' + sign + r.pct.toFixed(0) + "%</div></div>";
+      });
+      card.innerHTML = html;
+    }
+    var stats = view.querySelector(".stats");
+    var nag = view.querySelector("#backupNag");
+    if (nag) nag.insertAdjacentElement("afterend", card);
+    else if (stats) stats.insertAdjacentElement("afterend", card);
+    else view.insertBefore(card, view.firstChild);
   }
   function lastForTemplate(name, lifts) {
     var set = {};
@@ -88,6 +137,7 @@
     var view = document.getElementById("view-home");
     if (!view || !view.classList.contains("active") || lock) return;
     paintDash(view);
+    paintLifts(view);
     if (view.getAttribute("data-homeui-ready") === "1" && view.querySelector("[data-act='repeat-last']")) return;
     lock = true;
     var unit = document.getElementById("unitBtn"); if (unit) unit.style.display = "none";
