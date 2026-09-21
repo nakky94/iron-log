@@ -9,6 +9,9 @@
       return ({ "&": "&#38;", "<": "&#60;", ">": "&#62;", '"': "&#34;" })[c];
     });
   }
+  function shortName(n) {
+    return String(n || "").replace(/^Dumbbell\s/, "").replace(/\sMachine$/, "");
+  }
   var lock = false;
   var timer = null;
   function weekStart(offset) {
@@ -68,6 +71,7 @@
       var now = a[a.length - 1], prev = a[a.length - 2];
       out.push({ n: n, now: now.w, prev: prev.w, pct: (now.w - prev.w) / prev.w * 100, ts: now.ts });
     });
+    out.sort(function (a, b) { return Math.abs(b.pct) - Math.abs(a.pct); });
     return out;
   }
   function avgPct(rows) {
@@ -100,19 +104,50 @@
     if (!box) return;
     var last = workouts()[0];
     var tw = weekVol(weekStart(0), weekStart(0) + 7 * 864e5);
-    var lw = weekVol(weekStart(1), weekStart(0));
-    var delta = "";
-    if (lw) {
-      var pct = Math.round((tw - lw) / lw * 100);
-      delta = (pct >= 0 ? "+" : "") + pct + "%";
-    }
     var avg = avgPct(liftDeltas());
     var liftLabel = avg == null ? "—" : (avg >= 0 ? "+" : "") + avg.toFixed(0) + "%";
     box.setAttribute("data-dash", "1");
     box.innerHTML =
       '<div class="stat"><b>' + (last ? lastAgo(last.ts) : "—") + '</b><span class="tiny">last session</span></div>' +
-      '<div class="stat stat-accent"><b>' + fmtVol(tw) + '</b><span class="tiny">week volume' + (delta ? " · " + delta : "") + '</span></div>' +
+      '<div class="stat stat-accent"><b>' + fmtVol(tw) + '</b><span class="tiny">week volume</span></div>' +
       '<div class="stat"><b>' + liftLabel + '</b><span class="tiny">lift progress</span></div>';
+  }
+  function paintFeed(view) {
+    if (view.querySelector("#homeFeed")) return;
+    var ws = workouts();
+    var last = ws[0];
+    var html = "";
+    if (last) {
+      html += '<div class="card"><div class="row space"><div class="tiny">Last session</div><div class="tiny">' + fmtDay(last.ts) + '</div></div>';
+      html += '<div class="ex-name" style="margin-top:4px">' + esc(last.name || "Workout") + '</div>';
+      (last.exercises || []).slice(0, 5).forEach(function (e) {
+        var best = 0, reps = "";
+        (e.sets || []).forEach(function (s) {
+          if (s.done && Number(s.w) >= best) { best = Number(s.w); reps = s.r || ""; }
+        });
+        html += '<div class="row space" style="margin-top:8px"><div class="grow">' + esc(shortName(e.n)) + '</div><div class="tiny">' + (best ? best + " kg" + (reps ? " × " + reps : "") : "—") + '</div></div>';
+      });
+      html += '</div>';
+    }
+    var movers = liftDeltas().slice(0, 4);
+    if (movers.length) {
+      html += '<div class="card"><div class="tiny">Moving lifts</div>';
+      movers.forEach(function (r) {
+        var sign = r.pct >= 0 ? "+" : "";
+        var col = r.pct > 0.5 ? "#b7e39a" : r.pct < -0.5 ? "#ff6b3d" : "var(--muted)";
+        html += '<div class="row space" style="margin-top:8px"><div class="grow">' + esc(shortName(r.n)) + '<div class="tiny">' + r.prev + ' → ' + r.now + ' kg</div></div><div style="font-weight:700;color:' + col + '">' + sign + r.pct.toFixed(0) + '%</div></div>';
+      });
+      html += '</div>';
+    }
+    if (!html) return;
+    var feed = document.createElement("div");
+    feed.id = "homeFeed";
+    feed.innerHTML = html;
+    var stats = view.querySelector(".stats");
+    var head = view.querySelector(".sec-head") || view.querySelector("[data-tpl-id]");
+    if (stats && stats.nextSibling) view.insertBefore(feed, stats.nextSibling);
+    else if (head) view.insertBefore(feed, head);
+    else view.appendChild(feed);
   }
   function paintPrPct() {
     var view = document.getElementById("view-progress");
@@ -233,6 +268,7 @@
       lab.replaceWith(head);
     });
     bindTemplates(view);
+    paintFeed(view);
     setTimeout(function () { lock = false; }, 0);
   }
   function schedule() {
