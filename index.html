@@ -14,7 +14,7 @@
     :root{
       --bg:#0c0c0c; --bg-2:#141414; --card:#171717; --card-2:#1c1c1c;
       --line:#242424; --text:#f4f4f5; --muted:#9a9a9a; --accent:#FFD400;
-      --warn:#ff6b3d; --blue:#7ec8ff; --radius:18px;
+      --warn:#ff6b3d; --blue:#7ec8ff; --radius:16px;
       --safe-b:env(safe-area-inset-bottom, 0px);
       --safe-t:env(safe-area-inset-top, 0px);
       --nav-h:56px;
@@ -39,7 +39,7 @@
     .nav button.active span{display:block}
     .nav button.active svg{color:var(--accent)}
     .nav svg{width:20px;height:20px}
-    .card{background:var(--card);border:0;border-radius:var(--radius);padding:14px;margin-bottom:10px}
+    .card{background:var(--card);border:0;border-radius:var(--radius);padding:12px 14px;margin-bottom:8px}
     .row{display:flex;gap:8px;align-items:center}
     .space{justify-content:space-between}
     .grow{flex:1;min-width:0}
@@ -68,10 +68,10 @@
     .timer-box{width:min(360px,100%);background:var(--card);border-radius:24px;padding:28px 20px;text-align:center}
     .clock{font-size:clamp(56px,18vw,84px);line-height:1;color:var(--accent);font-weight:700;letter-spacing:-.04em}
     .clock.warn{color:var(--warn)}
-    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 10px;align-items:stretch}
-    .stat{text-align:center;background:var(--card);border-radius:14px;padding:12px 6px;min-height:76px;display:flex;flex-direction:column;justify-content:center;align-items:center}
-    .stat b{display:block;font-size:20px;line-height:1.1;color:var(--text);letter-spacing:-.04em;font-weight:700}
-    .stat .tiny{margin-top:4px;font-size:11px;line-height:1.2;height:14px;overflow:hidden;white-space:nowrap;max-width:100%}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:2px 0 8px;align-items:stretch}
+    .stat{text-align:center;background:var(--card);border-radius:12px;padding:8px 4px;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center}
+    .stat b{display:block;font-size:16px;line-height:1.1;color:var(--text);letter-spacing:-.04em;font-weight:700}
+    .stat .tiny{margin-top:2px;font-size:10px;line-height:1.2;height:12px;overflow:hidden;white-space:nowrap;max-width:100%}
     .stat-accent{background:#1d1a0a}
     .stat-accent b{color:var(--accent)}
     .bar{height:5px;background:#232323;border-radius:99px;overflow:hidden;margin-top:6px}
