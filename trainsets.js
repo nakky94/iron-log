@@ -6,6 +6,10 @@
   function workouts() { return load("il_workouts", []); }
   function uid() { return Math.random().toString(36).slice(2, 10); }
   function restSec() { return Number(load("il_rest", 90)) || 90; }
+  function typing() {
+    var a = document.activeElement;
+    return !!(a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA"));
+  }
   function lastSets(name) {
     var ws = workouts();
     for (var i = 0; i < ws.length; i++) {
@@ -27,12 +31,14 @@
     return best;
   }
   function persistField(t) {
+    var s = loadSess(); if (!s) return;
+    if (t.id === "sessName") { s.name = t.value; saveSess(s); return; }
+    if (t.id === "sessNotes") { s.notes = t.value; saveSess(s); return; }
     var act = t.getAttribute("data-act");
     if (act !== "set-w" && act !== "set-r") return;
-    var s = loadSess();
     var i = Number(t.getAttribute("data-i"));
     var si = Number(t.getAttribute("data-si"));
-    if (!s || !s.exercises || !s.exercises[i] || !s.exercises[i].sets[si]) return;
+    if (!s.exercises || !s.exercises[i] || !s.exercises[i].sets[si]) return;
     if (act === "set-w") s.exercises[i].sets[si].w = t.value;
     else s.exercises[i].sets[si].r = t.value;
     saveSess(s);
@@ -108,9 +114,13 @@
       el = document.createElement("div");
       el.id = "sessStrip";
       el.className = "sess-strip";
+      el.innerHTML = "<span></span><span></span><span></span>";
       view.insertBefore(el, view.firstChild);
     }
-    el.innerHTML = "<span>" + fmtClock(st.elapsed) + "</span><span>" + st.done + "/" + st.total + " sets</span><span>" + (st.vol >= 1000 ? (st.vol / 1000).toFixed(1) + "k" : st.vol) + " kg</span>";
+    var spans = el.querySelectorAll("span");
+    if (spans[0]) spans[0].textContent = fmtClock(st.elapsed);
+    if (spans[1]) spans[1].textContent = st.done + "/" + st.total + " sets";
+    if (spans[2]) spans[2].textContent = (st.vol >= 1000 ? (st.vol / 1000).toFixed(1) + "k" : st.vol) + " kg";
   }
   function paintHeat() {
     var view = document.getElementById("view-home");
@@ -137,6 +147,7 @@
     else view.insertBefore(box, view.firstChild);
   }
   function enhance() {
+    if (typing()) return;
     var view = document.getElementById("view-workout");
     if (!view || !view.classList.contains("active")) {
       clearInterval(sessTick); sessTick = null; return;
@@ -144,8 +155,8 @@
     paintStrip(view);
     if (!sessTick) sessTick = setInterval(function () {
       var v = document.getElementById("view-workout");
-      if (v && v.classList.contains("active")) paintStrip(v);
-      else { clearInterval(sessTick); sessTick = null; }
+      if (v && v.classList.contains("active") && !typing()) paintStrip(v);
+      else if (!v || !v.classList.contains("active")) { clearInterval(sessTick); sessTick = null; }
     }, 1000);
     hideModalTimer();
     Array.prototype.slice.call(view.querySelectorAll(".card .tiny")).forEach(function (el) {
@@ -219,11 +230,11 @@
     setTimeout(enhance, 0);
   }
   document.addEventListener("input", function (e) {
-    var t = e.target.closest("[data-act='set-w'], [data-act='set-r']");
+    var t = e.target.closest("[data-act='set-w'], [data-act='set-r'], #sessName, #sessNotes");
     if (t) persistField(t);
   });
   document.addEventListener("change", function (e) {
-    var t = e.target.closest("[data-act='set-w'], [data-act='set-r']");
+    var t = e.target.closest("[data-act='set-w'], [data-act='set-r'], #sessName, #sessNotes");
     if (t) persistField(t);
   });
   document.addEventListener("pointerdown", function (e) {
@@ -280,14 +291,15 @@
   }, true);
   var timer = null;
   function schedule() {
+    if (typing()) return;
     if (timer) return;
-    timer = setTimeout(function () { timer = null; enhance(); paintHeat(); }, 40);
+    timer = setTimeout(function () { timer = null; if (!typing()) { enhance(); paintHeat(); } }, 40);
   }
   function boot() {
-    ["view-workout", "view-home"].forEach(function (id) {
-      var n = document.getElementById(id);
-      if (n) new MutationObserver(schedule).observe(n, { childList: true, subtree: true });
-    });
+    var w = document.getElementById("view-workout");
+    if (w) new MutationObserver(schedule).observe(w, { childList: true });
+    var h = document.getElementById("view-home");
+    if (h) new MutationObserver(schedule).observe(h, { childList: true });
     enhance();
     paintHeat();
   }
