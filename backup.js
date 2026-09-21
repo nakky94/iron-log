@@ -90,6 +90,26 @@
     if (obj.custom) save("il_custom", mergeById(load("il_custom", []), obj.custom));
     save("il_unit", "kg");
   }
+  function parseOnWorker(text, done) {
+    if (typeof Worker === "undefined") {
+      try { done(null, JSON.parse(text)); } catch (err) { done(err); }
+      return;
+    }
+    var w = new Worker("parse.worker.js");
+    var settled = false;
+    w.onmessage = function (ev) {
+      if (settled) return; settled = true;
+      w.terminate();
+      if (!ev.data || !ev.data.ok) done(new Error((ev.data && ev.data.error) || "Parse failed"));
+      else done(null, ev.data.obj);
+    };
+    w.onerror = function () {
+      if (settled) return; settled = true;
+      w.terminate();
+      try { done(null, JSON.parse(text)); } catch (err) { done(err); }
+    };
+    w.postMessage({ type: "json", text: text });
+  }
   function paintLog() {
     var view = document.getElementById("view-history");
     if (!view || !view.classList.contains("active")) return;
@@ -102,9 +122,7 @@
   }
   document.addEventListener("click", function (e) {
     var packBtn = e.target.closest("[data-act='export-pack'], [data-act='export-json']");
-    if (packBtn) {
-      exportPack();
-    }
+    if (packBtn) exportPack();
     if (e.target.closest("[data-act='import-json']")) {
       var input = document.getElementById("importJsonFile");
       if (input) input.click();
@@ -117,13 +135,16 @@
     if (!file) return;
     var reader = new FileReader();
     reader.onload = function () {
-      try {
-        importJson(JSON.parse(reader.result));
-        alert("Log restored. Reloading.");
-        location.reload();
-      } catch (err) {
-        alert("Could not import that file.");
-      }
+      parseOnWorker(reader.result, function (err, obj) {
+        if (err) { alert("Could not import that file."); return; }
+        try {
+          importJson(obj);
+          alert("Log restored. Reloading.");
+          location.reload();
+        } catch (ex) {
+          alert("Could not import that file.");
+        }
+      });
     };
     reader.readAsText(file);
   });
