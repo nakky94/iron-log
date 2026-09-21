@@ -1,4 +1,4 @@
-const CACHE = "gym-log-v18";
+const CACHE = "gym-log-v19";
 const ASSETS = ["/", "/index.html", "/app.js", "/suggest.js", "/extra.js", "/more.js", "/cues.js", "/backup.js", "/homeui.js", "/parse.worker.js", "/manifest.webmanifest", "/icon.svg"];
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -14,7 +14,7 @@ self.addEventListener("fetch", (event) => {
     caches.match(event.request).then((hit) => {
       if (hit) {
         event.waitUntil(fetch(event.request).then((res) => {
-          if (res && res.ok) caches.open(CACHE).then((c) => c.put(event.request, copyRes(res)));
+          if (res && res.ok) caches.open(CACHE).then((c) => c.put(event.request, res.clone()));
         }).catch(function () {}));
         return hit;
       }
@@ -26,4 +26,3 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
-function copyRes(res) { return res.clone(); }
