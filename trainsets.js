@@ -38,7 +38,7 @@
       b.setAttribute("data-si", w.getAttribute("data-si"));
       b.setAttribute("aria-label", "Delete set");
       b.style.color = "var(--warn)";
-      b.textContent = "–";
+      b.textContent = "\u2013";
       row.appendChild(b);
     });
   }
@@ -64,7 +64,13 @@
     var i = Number(t.getAttribute("data-i"));
     var si = Number(t.getAttribute("data-si"));
     if (!s || !s.exercises || !s.exercises[i]) return;
-    var sets = s.exercises[i].sets || [];
+    var ex = s.exercises[i];
+    var sets = ex.sets || [];
+    var set = sets[si] || {};
+    var label = "set " + (si + 1);
+    if (ex.n) label += " of " + ex.n;
+    if (set.w || set.r) label += " (" + (set.w || "0") + " kg × " + (set.r || "0") + ")";
+    if (!confirm("Delete " + label + "?")) return;
     if (sets.length <= 1) {
       sets[0] = { id: uid(), w: "", r: "", done: false };
     } else {
