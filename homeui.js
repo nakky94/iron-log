@@ -4,6 +4,11 @@
   function fmtDay(ts) {
     return new Date(ts).toLocaleDateString(undefined, { day: "numeric", month: "short" });
   }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+      return ({ "&": "&#38;", "<": "&#60;", ">": "&#62;", '"': "&#34;" })[c];
+    });
+  }
   var lock = false;
   var timer = null;
   function weekStart(offset) {
@@ -36,17 +41,6 @@
     if (days < 8) return days + "d ago";
     return fmtDay(ts);
   }
-  function kind(w) {
-    var title = (w.name || "").toLowerCase();
-    if (title.indexOf("press") >= 0) return "Press";
-    if (title.indexOf("leg") >= 0) return "Legs";
-    var names = (w.exercises || []).map(function (e) { return e.n; }).join(" ").toLowerCase();
-    var press = /press|fly|bench|shoulder|tricep/.test(names);
-    var legs = /squat|lunge|rdl|deadlift|calf|leg /.test(names);
-    if (legs && !press) return "Legs";
-    if (press && !legs) return "Press";
-    return "Train";
-  }
   function shortName(n) {
     return String(n || "").replace(/^Dumbbell\s/, "").replace(/\sMachine$/, "");
   }
@@ -71,7 +65,13 @@
       out.push({ n: n, now: a[0].w, prev: a[1].w, pct: pct, ts: a[0].ts });
     });
     out.sort(function (a, b) { return Math.abs(b.pct) - Math.abs(a.pct); });
-    return out.slice(0, 8);
+    return out;
+  }
+  function avgPct(rows) {
+    if (!rows.length) return null;
+    var s = 0;
+    rows.forEach(function (r) { s += r.pct; });
+    return s / rows.length;
   }
   function paintDash(view) {
     var box = view.querySelector(".stats");
@@ -84,25 +84,25 @@
       var pct = Math.round((tw - lw) / lw * 100);
       delta = (pct >= 0 ? "+" : "") + pct + "%";
     }
-    var next = "Press";
-    if (last && kind(last) === "Press") next = "Legs";
-    else if (last && kind(last) === "Legs") next = "Press";
+    var rows = liftDeltas();
+    var avg = avgPct(rows);
+    var liftLabel = avg == null ? "—" : (avg >= 0 ? "+" : "") + avg.toFixed(0) + "%";
     box.setAttribute("data-dash", "1");
     box.innerHTML =
       '<div class="stat"><b>' + (last ? lastAgo(last.ts) : "—") + '</b><span class="tiny">last session</span></div>' +
       '<div class="stat stat-accent"><b>' + fmtVol(tw) + '</b><span class="tiny">week volume' + (delta ? " · " + delta : "") + '</span></div>' +
-      '<div class="stat"><b>' + next + '</b><span class="tiny">up next</span></div>';
+      '<div class="stat"><b>' + liftLabel + '</b><span class="tiny">lift progress</span></div>';
   }
   function paintLifts(view) {
     if (view.querySelector("#liftPct")) return;
-    var rows = liftDeltas();
+    var rows = liftDeltas().slice(0, 8);
     var card = document.createElement("div");
     card.id = "liftPct";
     card.className = "card";
     if (!rows.length) {
-      card.innerHTML = '<div class="tiny">Lift progress</div><div class="tiny" style="margin-top:8px">Need two logged sessions on a lift to show %.</div>';
+      card.innerHTML = '<div class="tiny">By lift</div><div class="tiny" style="margin-top:8px">Need two logged sessions on a lift to show %.</div>';
     } else {
-      var html = '<div class="tiny">Lift progress</div>';
+      var html = '<div class="tiny">By lift</div>';
       rows.forEach(function (r) {
         var sign = r.pct >= 0 ? "+" : "";
         var col = r.pct > 0.5 ? "#b7e39a" : r.pct < -0.5 ? "#ff6b3d" : "var(--muted)";
@@ -132,6 +132,19 @@
       return false;
     });
     return "last " + fmtDay(w.ts) + (top ? " · " + top : "");
+  }
+  function openTemplate(id) {
+    var routines = load("il_routines", []);
+    var r = routines.filter(function (x) { return x.id === id; })[0];
+    if (!r) return;
+    var html = '<div class="grab"></div><div class="ex-name">' + esc(r.name) + '</div>';
+    html += '<div class="tiny" style="margin:6px 0 12px">' + (r.exercises || []).length + ' exercises</div>';
+    (r.exercises || []).forEach(function (e, i) {
+      html += '<div class="row space" style="margin-top:8px"><div>' + (i + 1) + '. ' + esc(e.n) + '</div><div class="tiny">' + esc(e.m || e.t || "") + '</div></div>';
+    });
+    html += '<div style="height:16px"></div><button class="btn" type="button" data-act="load-routine" data-id="' + esc(r.id) + '">Start this session</button>';
+    var sheet = document.getElementById("sheet"), modal = document.getElementById("modal");
+    if (sheet && modal) { sheet.innerHTML = html; modal.classList.add("show"); }
   }
   function polishHome() {
     var view = document.getElementById("view-home");
@@ -175,10 +188,11 @@
       btn.style.display = "none";
       if (del) del.style.display = editOn ? "" : "none";
       card.style.cursor = "pointer";
+      var id = btn.getAttribute("data-id");
       var nameEl = card.querySelector(".ex-name");
       var name = nameEl ? nameEl.textContent : "";
       var routines = load("il_routines", []);
-      var match = routines.filter(function (r) { return r.name === name; })[0];
+      var match = routines.filter(function (r) { return r.id === id || r.name === name; })[0];
       var extra = lastForTemplate(name, match ? (match.exercises || []).map(function (e) { return e.n; }) : []);
       var meta = card.querySelector(".tiny");
       if (extra && meta && !meta.getAttribute("data-last")) {
@@ -187,7 +201,9 @@
       }
       card.addEventListener("click", function (ev) {
         if (ev.target.closest("[data-act='del-routine'], [data-act='toggle-tpl-edit']")) return;
-        btn.click();
+        ev.preventDefault();
+        ev.stopPropagation();
+        openTemplate(id || (match && match.id));
       });
     });
     view.setAttribute("data-homeui-ready", "1");
@@ -198,14 +214,23 @@
     timer = setTimeout(function () { timer = null; polishHome(); }, 80);
   }
   document.addEventListener("click", function (e) {
-    if (!e.target.closest("[data-act='toggle-tpl-edit']")) return;
-    try {
-      var cur = !!JSON.parse(localStorage.getItem("il_tpl_edit") || "false");
-      localStorage.setItem("il_tpl_edit", JSON.stringify(!cur));
-    } catch (err) { localStorage.setItem("il_tpl_edit", "true"); }
-    var view = document.getElementById("view-home");
-    if (view) view.removeAttribute("data-homeui-ready");
-    document.querySelector('.nav button[data-view="home"]').click();
+    if (e.target.closest("[data-act='toggle-tpl-edit']")) {
+      try {
+        var cur = !!JSON.parse(localStorage.getItem("il_tpl_edit") || "false");
+        localStorage.setItem("il_tpl_edit", JSON.stringify(!cur));
+      } catch (err) { localStorage.setItem("il_tpl_edit", "true"); }
+      var view = document.getElementById("view-home");
+      if (view) view.removeAttribute("data-homeui-ready");
+      document.querySelector('.nav button[data-view="home"]').click();
+    }
+    if (e.target.closest("#sheet [data-act='load-routine']")) {
+      var modal = document.getElementById("modal");
+      if (modal) modal.classList.remove("show");
+    }
+  });
+  document.addEventListener("click", function (e) {
+    var bg = e.target.id === "modal" ? e.target : null;
+    if (bg) bg.classList.remove("show");
   });
   setTimeout(function () {
     var n = document.getElementById("view-home");
