@@ -26,7 +26,15 @@
     var view = document.getElementById("view-home");
     if (!view || !view.classList.contains("active")) return;
     var unit = document.getElementById("unitBtn");
-    if (unit) unit.textContent = "kg";
+    if (unit) unit.style.display = "none";
+    var instBtn = document.getElementById("installBtn");
+    if (instBtn) instBtn.style.display = "none";
+    var homeInst = document.getElementById("homeInstall");
+    if (homeInst) homeInst.remove();
+    Array.prototype.slice.call(view.querySelectorAll("button, a")).forEach(function (el) {
+      var t = (el.textContent || "").trim().toLowerCase();
+      if (t === "install app" || t === "add to home screen" || t === "install") el.remove();
+    });
     var date = document.getElementById("dateLabel");
     if (date) date.textContent = new Date().toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
 
@@ -46,11 +54,6 @@
 
     var vol = view.querySelector("#volWeek");
     if (vol && /No sets logged this week/i.test(vol.textContent)) vol.style.display = "none";
-
-    if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone) {
-      var inst = document.getElementById("homeInstall");
-      if (inst) inst.remove();
-    }
 
     var editOn = !!load("il_tpl_edit", false);
     Array.prototype.slice.call(view.querySelectorAll(".tiny")).forEach(function (lab) {
