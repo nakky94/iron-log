@@ -60,10 +60,12 @@
     .tag{font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:3px 7px;border-radius:6px;background:#232323;color:var(--muted);font-weight:600}
     .tag.db{color:var(--blue);background:#15202a}
     .tag.mc{color:#111;background:var(--accent)}
-    .set-grid{display:grid;grid-template-columns:28px 1fr 1fr 44px;gap:6px;align-items:center;margin-top:8px}
+    .set-grid{display:grid;grid-template-columns:24px 1fr 1fr 44px 36px;gap:6px;align-items:center;margin-top:8px}
     .set-grid input{text-align:center;padding:9px 6px;min-height:44px;font-size:16px}
-    .set-grid button{min-height:44px;min-width:44px}
-    .done{opacity:.5}
+    .set-grid button{min-height:44px;min-width:36px}
+    .set-grid [data-act='del-set']{width:36px;min-width:36px;color:var(--warn);font-size:20px;font-weight:700}
+    .done{opacity:.88}
+    .done input{opacity:1}
     .timer-overlay{display:none;position:fixed;inset:0;z-index:50;background:#000c;align-items:center;justify-content:center;padding:24px}
     .timer-overlay.show{display:flex}
     .timer-box{width:min(360px,100%);background:var(--card);border-radius:24px;padding:28px 20px;text-align:center}
@@ -137,5 +139,6 @@
   <script src="cues.js" defer></script>
   <script src="backup.js" defer></script>
   <script src="homeui.js" defer></script>
+  <script src="trainsets.js" defer></script>
 </body>
 </html>
