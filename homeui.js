@@ -31,10 +31,7 @@
     if (date) date.textContent = new Date().toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
 
     var empty = view.querySelector("[data-act='start-fresh']");
-    if (empty) {
-      empty.textContent = "New session";
-      empty.className = "btn ghost";
-    }
+    if (empty) { empty.textContent = "New session"; empty.className = "btn ghost"; }
     var repeat = view.querySelector("[data-act='repeat-last']");
     if (repeat) {
       var last = workouts()[0];
@@ -42,40 +39,21 @@
       if (last) repeat.textContent = "Repeat " + fmtDay(last.ts);
     }
 
-    view.querySelectorAll("button, .btn, p, .tiny, div").forEach(function (el) {
+    Array.prototype.slice.call(view.querySelectorAll("button, .tiny, div")).forEach(function (el) {
       var t = (el.textContent || "").trim();
-      if (t === "Quick add from gear" || t === "Browse dumbbells and machines") {
-        var card = el.closest(".card") || el;
-        if (el.tagName === "BUTTON" && el.previousElementSibling && /quick add/i.test(el.previousElementSibling.textContent || "")) {
-          el.previousElementSibling.style.display = "none";
-        }
-        if (t === "Quick add from gear") el.style.display = "none";
-        if (t === "Browse dumbbells and machines") el.style.display = "none";
-        if (card && card !== view && card.classList.contains("card") && /browse/i.test(card.textContent)) card.style.display = "none";
-      }
+      if (t === "Quick add from gear" || t === "Browse dumbbells and machines") el.style.display = "none";
     });
 
     var vol = view.querySelector("#volWeek");
     if (vol && /No sets logged this week/i.test(vol.textContent)) vol.style.display = "none";
 
     if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone) {
-      var inst = view.querySelector("#homeInstall");
+      var inst = document.getElementById("homeInstall");
       if (inst) inst.remove();
-    } else {
-      var hi = view.querySelector("#homeInstall");
-      if (hi && hi.parentElement === view) {
-        var header = document.querySelector("header.top .row");
-        if (header && !header.querySelector("#homeInstall")) {
-          hi.className = "text-link muted";
-          hi.textContent = "Add to Home Screen";
-          header.insertBefore(hi, header.firstChild);
-        }
-      }
     }
 
     var editOn = !!load("il_tpl_edit", false);
-    var labels = view.querySelectorAll(".tiny");
-    labels.forEach(function (lab) {
+    Array.prototype.slice.call(view.querySelectorAll(".tiny")).forEach(function (lab) {
       if ((lab.textContent || "").trim() !== "Templates") return;
       if (lab.parentElement && lab.parentElement.classList.contains("sec-head")) return;
       var head = document.createElement("div");
@@ -85,7 +63,7 @@
       lab.replaceWith(head);
     });
 
-    view.querySelectorAll("[data-act='load-routine']").forEach(function (btn) {
+    Array.prototype.slice.call(view.querySelectorAll("[data-act='load-routine']")).forEach(function (btn) {
       var card = btn.closest(".card"); if (!card || card.getAttribute("data-homeui")) return;
       card.setAttribute("data-homeui", "1");
       var del = card.querySelector("[data-act='del-routine']");
@@ -94,16 +72,14 @@
       card.style.cursor = "pointer";
       var nameEl = card.querySelector(".ex-name");
       var name = nameEl ? nameEl.textContent : "";
-      var lifts = [];
-      card.querySelectorAll(".tiny").forEach(function () {});
       var routines = load("il_routines", []);
       var match = routines.filter(function (r) { return r.name === name; })[0];
       var liftNames = match ? (match.exercises || []).map(function (e) { return e.n; }) : [];
       var extra = lastForTemplate(name, liftNames);
-      var meta = card.querySelectorAll(".tiny");
-      if (extra && meta[0] && !meta[0].getAttribute("data-last")) {
-        meta[0].setAttribute("data-last", "1");
-        meta[0].textContent = extra;
+      var meta = card.querySelector(".tiny");
+      if (extra && meta && !meta.getAttribute("data-last")) {
+        meta.setAttribute("data-last", "1");
+        meta.textContent = extra;
       }
       card.addEventListener("click", function (ev) {
         if (ev.target.closest("[data-act='del-routine'], [data-act='toggle-tpl-edit']")) return;
@@ -113,17 +89,12 @@
   }
   document.addEventListener("click", function (e) {
     if (!e.target.closest("[data-act='toggle-tpl-edit']")) return;
-    saveToggle();
-    document.querySelector('.nav button[data-view="home"]').click();
-  });
-  function saveToggle() {
     try {
       var cur = !!JSON.parse(localStorage.getItem("il_tpl_edit") || "false");
       localStorage.setItem("il_tpl_edit", JSON.stringify(!cur));
-    } catch (err) {
-      localStorage.setItem("il_tpl_edit", "true");
-    }
-  }
+    } catch (err) { localStorage.setItem("il_tpl_edit", "true"); }
+    document.querySelector('.nav button[data-view="home"]').click();
+  });
   var obs = new MutationObserver(function () { polishHome(); });
   setTimeout(function () {
     var n = document.getElementById("view-home");
