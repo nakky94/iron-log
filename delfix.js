@@ -19,11 +19,11 @@
     var btn = document.querySelector('.nav button[data-view="workout"]');
     if (btn) btn.click();
   }
-  document.addEventListener("click", function (e) {
+  window.addEventListener("click", function (e) {
     var t = e.target.closest("[data-act='del-set']");
     if (!t) return;
     e.preventDefault();
-    e.stopImmediatePropagation();
+    e.stopPropagation();
     del(Number(t.getAttribute("data-i")), Number(t.getAttribute("data-si")));
   }, true);
 })();
