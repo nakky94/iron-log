@@ -21,7 +21,7 @@
     header.top{position:sticky;top:0;z-index:20;background:#0c0c0c;padding:calc(6px + var(--safe-t)) 16px 6px;display:flex;align-items:center}
     .brand{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700}
     .brand .mark{width:12px;height:12px;background:var(--accent);border-radius:3px}
-    #dateLabel,#unitBtn,#installBtn,#homeInstall,[data-act='repeat-last']{display:none !important}
+    #dateLabel,#unitBtn,#installBtn,#homeInstall,[data-act='repeat-last'],#view-home [data-act='start-fresh']{display:none !important}
     .view{display:none;padding:4px 16px calc(var(--nav-h) + var(--safe-b) + 20px)}
     .view.active{display:block}
     .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:520px;display:grid;grid-template-columns:repeat(5,1fr);background:#0c0c0c;border-top:1px solid #1a1a1a;padding:4px 8px calc(6px + var(--safe-b));z-index:30}
@@ -31,7 +31,7 @@
     .nav button.active span{display:block}
     .nav button.active svg{color:var(--accent)}
     .nav svg{width:20px;height:20px}
-    .card{background:var(--card);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;text-align:left}
+    .card{background:var(--card);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;text-align:left;position:relative}
     .row{display:flex;gap:8px;align-items:center}
     .space{justify-content:space-between}
     .grow{flex:1;min-width:0}
@@ -39,7 +39,12 @@
     .btn{background:var(--accent);color:#111;font-weight:700;border-radius:14px;padding:12px 14px;width:100%;min-height:44px}
     .btn.ghost{background:var(--card-2);color:var(--text)}
     .btn.warn{background:transparent;color:var(--warn)}
-    .chip{flex:0 0 auto;background:var(--card);border-radius:999px;padding:8px 13px;font-size:13px;color:var(--muted);min-height:44px}
+    .btn.sm{width:auto;padding:8px 12px;min-height:40px}
+    #view-library .card .btn,#view-history .card .btn{
+      width:auto !important;min-width:64px;max-width:42%;padding:8px 12px;min-height:40px;flex:0 0 auto;float:right;margin-left:8px;
+    }
+    #view-history .card .btn.ghost,#view-history .card .btn.warn{width:auto !important;max-width:42%;}
+    .chip{flex:0 0 auto;background:var(--card);border-radius:999px;padding:8px 13px;font-size:13px;color:var(--muted);min-height:40px}
     .chip.on{background:var(--accent);color:#111;font-weight:700}
     .chips{display:flex;gap:8px;overflow-x:auto;margin:10px 0 14px}
     input,select,textarea{width:100%;background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:16px}
@@ -118,5 +123,6 @@
   <script src="plus.js" defer></script>
   <script src="typefix.js" defer></script>
   <script src="restctl.js" defer></script>
+  <script src="layout.js" defer></script>
 </body>
 </html>
