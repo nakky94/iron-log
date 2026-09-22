@@ -21,10 +21,9 @@
     header.top{position:sticky;top:0;z-index:20;background:#0c0c0c;padding:calc(6px + var(--safe-t)) 16px 6px;display:flex;align-items:center}
     .brand{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700}
     .brand .mark{width:12px;height:12px;background:var(--accent);border-radius:3px}
-    #unitBtn,#installBtn,#homeInstall,[data-act='repeat-last']{display:none !important}
+    #dateLabel,#unitBtn,#installBtn,#homeInstall,[data-act='repeat-last']{display:none !important}
     .view{display:none;padding:4px 16px calc(var(--nav-h) + var(--safe-b) + 20px)}
     .view.active{display:block}
-    #view-home.active:not(.ready){visibility:hidden}
     .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:520px;display:grid;grid-template-columns:repeat(5,1fr);background:#0c0c0c;border-top:1px solid #1a1a1a;padding:4px 8px calc(6px + var(--safe-b));z-index:30}
     .nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-size:10px;font-weight:600;min-height:40px}
     .nav button span{display:none}
@@ -39,8 +38,10 @@
     .tiny{font-size:12px;color:var(--muted);font-weight:500}
     .btn{background:var(--accent);color:#111;font-weight:700;border-radius:14px;padding:12px 14px;width:100%;min-height:44px}
     .btn.ghost{background:var(--card-2);color:var(--text)}
+    .btn.warn{background:transparent;color:var(--warn)}
     .chip{flex:0 0 auto;background:var(--card);border-radius:999px;padding:8px 13px;font-size:13px;color:var(--muted);min-height:44px}
     .chip.on{background:var(--accent);color:#111;font-weight:700}
+    .chips{display:flex;gap:8px;overflow-x:auto;margin:10px 0 14px}
     input,select,textarea{width:100%;background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:16px}
     .ex-name{font-weight:650;text-align:left}
     .set-grid{display:grid;grid-template-columns:28px 1fr 1fr 48px 36px;gap:6px;align-items:center;margin-top:8px}
@@ -73,13 +74,22 @@
     .set-grid [data-act='toggle-set']{width:48px;height:48px;border-radius:14px;font-weight:800}
     .set-grid [data-act='toggle-set']:not(.ghost){background:var(--accent);color:#111}
     .set-grid [data-act='del-set']{width:36px;color:var(--warn);font-size:20px}
-    .chips{display:flex;gap:8px;overflow-x:auto;margin:10px 0 14px}
+    .heat{display:flex;gap:6px;overflow-x:auto;margin:0 0 10px}
+    .heat span{flex:0 0 auto;font-size:11px;padding:5px 9px;border-radius:999px;background:#1a1a1a;color:#6a6a6a}
+    .heat span.on{background:#1d1a0a;color:var(--accent);font-weight:700}
+    #prToast{position:fixed;left:50%;bottom:calc(var(--nav-h) + var(--safe-b) + 16px);transform:translateX(-50%);background:var(--accent);color:#111;font-weight:800;padding:12px 16px;border-radius:14px;opacity:0;pointer-events:none;z-index:60}
+    #prToast.show{opacity:1}
   </style>
 </head>
 <body>
   <div class="app">
-    <header class="top"><div class="brand"><i class="mark"></i>Gym Log</div></header>
-    <section class="view active" id="view-home"></section>
+    <header class="top">
+      <div class="brand"><i class="mark"></i>Gym Log</div>
+      <div id="dateLabel" hidden></div>
+      <button type="button" id="installBtn" hidden>Install</button>
+      <div id="unitBtn" hidden>kg</div>
+    </header>
+    <section class="view active ready" id="view-home"></section>
     <section class="view" id="view-library"></section>
     <section class="view" id="view-workout"></section>
     <section class="view" id="view-history"></section>
