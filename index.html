@@ -11,23 +11,22 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon.svg" />
   <style>
-    :root{--bg:#0c0c0c;--bg-2:#141414;--card:#171717;--card-2:#1c1c1c;--line:#242424;--text:#f4f4f5;--muted:#9a9a9a;--accent:#FFD400;--warn:#ff6b3d;--blue:#7ec8ff;--radius:16px;--safe-b:env(safe-area-inset-bottom, 0px);--safe-t:env(safe-area-inset-top, 0px);--nav-h:56px;}
+    :root{--bg:#0c0c0c;--bg-2:#141414;--card:#171717;--card-2:#1c1c1c;--line:#242424;--text:#f4f4f5;--muted:#9a9a9a;--accent:#FFD400;--warn:#ff6b3d;--radius:16px;--safe-b:env(safe-area-inset-bottom, 0px);--safe-t:env(safe-area-inset-top, 0px);--nav-h:56px;}
     *{box-sizing:border-box;margin:0;padding:0}
     html,body{min-height:100dvh;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
-    body{padding-bottom:calc(var(--nav-h) + var(--safe-b) + 16px);-webkit-font-smoothing:antialiased}
+    body{padding-bottom:calc(var(--nav-h) + var(--safe-b) + 16px)}
     button,input,select,textarea{font:inherit;color:inherit}
     button{cursor:pointer;border:0;background:none}
     .app{max-width:520px;margin:0 auto;min-height:100dvh}
     header.top{position:sticky;top:0;z-index:20;background:#0c0c0c;padding:calc(6px + var(--safe-t)) 16px 6px;display:flex;align-items:center}
-    .sub,#dateLabel{display:none !important}
-    .brand{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700;letter-spacing:-.03em}
-    .brand .mark{width:12px;height:12px;background:var(--accent);border-radius:3px;flex:0 0 12px}
-    .unit-label,#unitBtn,#installBtn,#homeInstall,[data-act='repeat-last'],#view-home [data-act='start-fresh']{display:none !important}
+    .brand{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700}
+    .brand .mark{width:12px;height:12px;background:var(--accent);border-radius:3px}
+    #unitBtn,#installBtn,#homeInstall,[data-act='repeat-last']{display:none !important}
     .view{display:none;padding:4px 16px calc(var(--nav-h) + var(--safe-b) + 20px)}
     .view.active{display:block}
     #view-home.active:not(.ready){visibility:hidden}
     .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:520px;display:grid;grid-template-columns:repeat(5,1fr);background:#0c0c0c;border-top:1px solid #1a1a1a;padding:4px 8px calc(6px + var(--safe-b));z-index:30}
-    .nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--muted);font-size:10px;font-weight:600;min-height:40px}
+    .nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-size:10px;font-weight:600;min-height:40px}
     .nav button span{display:none}
     .nav button.active{color:var(--text)}
     .nav button.active span{display:block}
@@ -40,52 +39,46 @@
     .tiny{font-size:12px;color:var(--muted);font-weight:500}
     .btn{background:var(--accent);color:#111;font-weight:700;border-radius:14px;padding:12px 14px;width:100%;min-height:44px}
     .btn.ghost{background:var(--card-2);color:var(--text)}
-    .btn.warn{background:transparent;color:var(--warn)}
-    .btn.sm{padding:8px 12px;width:auto;font-size:13px;border-radius:10px;min-height:44px}
-    .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin:10px 0 14px}
     .chip{flex:0 0 auto;background:var(--card);border-radius:999px;padding:8px 13px;font-size:13px;color:var(--muted);min-height:44px}
     .chip.on{background:var(--accent);color:#111;font-weight:700}
     input,select,textarea{width:100%;background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:16px}
-    .ex-name{font-weight:650;letter-spacing:-.02em;text-align:left}
-    .tag{font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:3px 7px;border-radius:6px;background:#232323;color:var(--muted);font-weight:600}
+    .ex-name{font-weight:650;text-align:left}
     .set-grid{display:grid;grid-template-columns:28px 1fr 1fr 48px 36px;gap:6px;align-items:center;margin-top:8px}
     .set-grid input{text-align:center;padding:9px 6px;min-height:48px;font-size:16px}
-    .step-wrap{display:flex;align-items:center;gap:4px;min-width:0}
+    .step-wrap{display:flex;align-items:center;gap:4px}
     .step-wrap input{flex:1;min-width:0}
-    .step{width:36px;height:48px;flex:0 0 36px;border-radius:10px;background:#1c1c1c;font-weight:800;font-size:18px}
-    .rir-row{display:flex;align-items:center;gap:6px;margin-top:10px}
+    .step{width:36px;height:48px;border-radius:10px;background:#1c1c1c;font-weight:800}
+    .rir-row{display:flex;gap:6px;margin-top:10px;align-items:center}
     .rir{width:36px;height:36px;border-radius:10px;background:#1c1c1c;color:var(--muted);font-weight:700}
     .rir.on{background:var(--accent);color:#111}
     .rest-adj{display:inline-flex;gap:6px;margin-left:8px}
     .rest-adj button{background:#2a2610;color:var(--accent);border-radius:8px;padding:4px 8px;font-size:12px;font-weight:700}
     .rest-num{display:inline-block;min-width:4.2ch;font-variant-numeric:tabular-nums}
     .ghost-set{grid-column:2 / 4;font-size:11px;color:#6a6a6a}
-    .timer-overlay,.timer-overlay.show{display:none !important}
+    .timer-overlay{display:none !important}
     .sess-strip{display:flex;flex-wrap:wrap;justify-content:space-between;padding:6px 2px 10px;color:var(--muted);font-size:12px;font-weight:600;position:sticky;top:calc(28px + var(--safe-t));background:var(--bg);z-index:8}
     .rest-chip{margin-top:10px;width:100%;background:#1d1a0a;color:var(--accent);border-radius:12px;padding:10px;font-weight:700;min-height:48px}
     .bar{height:5px;background:#232323;border-radius:99px;overflow:hidden;margin-top:6px}
     .bar>i{display:block;height:100%;background:var(--accent)}
-    .vol-row{margin-top:10px}
     .text-link{color:var(--text);font-size:13px;font-weight:600}
     .modal-bg{display:none;position:fixed;inset:0;background:#000a;z-index:40;align-items:flex-end;justify-content:center}
     .modal-bg.show{display:flex}
     .sheet{width:100%;max-width:520px;background:#161616;border-radius:22px 22px 0 0;padding:16px 16px calc(20px + var(--safe-b));max-height:88dvh;overflow:auto}
-    .grab{width:42px;height:4px;background:#3a3a3a;border-radius:99px;margin:0 auto 14px}
     .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:2px 0 8px}
-    .stat{text-align:center;background:var(--card);border-radius:12px;padding:8px 4px;display:flex;flex-direction:column;justify-content:center;align-items:center}
-    .stat b{font-size:16px;font-weight:700}
-    .stat .tiny{margin-top:2px;font-size:10px;height:12px;overflow:hidden;white-space:nowrap;max-width:100%}
+    .stat{text-align:center;background:var(--card);border-radius:12px;padding:8px 4px}
+    .stat b{font-size:16px}
+    .stat .tiny{font-size:10px}
     .stat-accent{background:#1d1a0a}
     .stat-accent b{color:var(--accent)}
-    .set-grid [data-act='toggle-set']{width:48px;height:48px;border-radius:14px;font-size:20px;font-weight:800}
+    .set-grid [data-act='toggle-set']{width:48px;height:48px;border-radius:14px;font-weight:800}
     .set-grid [data-act='toggle-set']:not(.ghost){background:var(--accent);color:#111}
-    .set-grid [data-act='del-set']{width:36px;color:var(--warn);font-size:20px;font-weight:700}
-    #view-home [data-tpl-id] .ex-name{text-align:left;flex:1}
+    .set-grid [data-act='del-set']{width:36px;color:var(--warn);font-size:20px}
+    .chips{display:flex;gap:8px;overflow-x:auto;margin:10px 0 14px}
   </style>
 </head>
 <body>
   <div class="app">
-    <header class="top"><div class="brand"><i class="mark"></i>Gym Log</div><button type="button" id="installBtn" hidden>Install</button><div id="unitBtn" hidden>kg</div></header>
+    <header class="top"><div class="brand"><i class="mark"></i>Gym Log</div></header>
     <section class="view active" id="view-home"></section>
     <section class="view" id="view-library"></section>
     <section class="view" id="view-workout"></section>
@@ -114,5 +107,6 @@
   <script src="volume.js" defer></script>
   <script src="plus.js" defer></script>
   <script src="typefix.js" defer></script>
+  <script src="restctl.js" defer></script>
 </body>
 </html>
