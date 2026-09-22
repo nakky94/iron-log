@@ -37,6 +37,11 @@
       if (n) new MutationObserver(schedule).observe(n, { childList: true });
     });
     run();
+    if (!document.querySelector('script[src="sesspause.js"]')) {
+      var s = document.createElement("script");
+      s.src = "sesspause.js";
+      document.body.appendChild(s);
+    }
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
