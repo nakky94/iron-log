@@ -22,29 +22,35 @@
     start.setHours(0, 0, 0, 0);
     return start.getTime();
   }
-  function weekVol(from, to) {
-    var n = 0;
-    workouts().forEach(function (w) {
-      if (w.ts < from || w.ts >= to) return;
-      (w.exercises || []).forEach(function (e) {
-        (e.sets || []).forEach(function (s) {
-          if (s.done) n += (Number(s.w) || 0) * (Number(s.r) || 0);
-        });
-      });
-    });
-    return Math.round(n);
-  }
-  function fmtVol(n) {
-    if (!n) return "0";
-    if (n >= 1000) return (n / 1000).toFixed(n >= 10000 ? 0 : 1) + "k";
-    return String(n);
+  function weekStreak() {
+    var n = 0, i = 0;
+    if (!workouts().some(function (w) { return w.ts >= weekStart(0); })) i = 1;
+    while (true) {
+      var from = weekStart(i), to = from + 7 * 864e5;
+      var hit = workouts().some(function (w) { return w.ts >= from && w.ts < to; });
+      if (!hit) break;
+      n += 1; i += 1;
+      if (i > 80) break;
+    }
+    return n;
   }
   function lastAgo(ts) {
     var days = Math.floor((Date.now() - ts) / 864e5);
     if (days <= 0) return "Today";
-    if (days === 1) return "1d ago";
-    if (days < 8) return days + "d ago";
+    if (days === 1) return "Yesterday";
+    if (days < 8) return days + " days ago";
     return fmtDay(ts);
+  }
+  function latestPr() {
+    var prs = load("il_prs", {});
+    var best = null;
+    Object.keys(prs).forEach(function (n) {
+      var p = prs[n] || {};
+      if (!best || (p.ts || 0) > (best.ts || 0) || ((p.ts || 0) === (best.ts || 0) && (p.w || 0) > (best.w || 0))) {
+        best = { n: n, w: p.w, r: p.r, ts: p.ts };
+      }
+    });
+    return best;
   }
   function liftSeries() {
     var map = {};
@@ -76,12 +82,6 @@
     out.sort(function (a, b) { return Math.abs(b.pct) - Math.abs(a.pct); });
     return out;
   }
-  function avgPct(rows) {
-    if (!rows.length) return null;
-    var s = 0;
-    rows.forEach(function (r) { s += r.pct; });
-    return s / rows.length;
-  }
   function sparkSvg(pts) {
     if (!pts || pts.length < 2) return "";
     var w = 280, h = 56, pad = 6;
@@ -101,53 +101,69 @@
       '<circle cx="' + lx.toFixed(1) + '" cy="' + ly.toFixed(1) + '" r="3.2" fill="#FFD400" /></svg>' +
       '<div class="row space"><span class="tiny">' + fmtDay(pts[0].ts) + '</span><span class="tiny">' + pts.length + ' sessions \u00b7 ' + fmtDay(last.ts) + '</span></div>';
   }
-  function paintDash(view) {
-    var box = view.querySelector(".stats");
-    if (!box) return;
+  function paintAction(view) {
     var last = workouts()[0];
-    var tw = weekVol(weekStart(0), weekStart(0) + 7 * 864e5);
-    var avg = avgPct(liftDeltas());
-    var liftLabel = avg == null ? "\u2014" : (avg >= 0 ? "+" : "") + avg.toFixed(0) + "%";
-    box.setAttribute("data-dash", "1");
-    box.innerHTML =
-      '<div class="stat"><b>' + (last ? lastAgo(last.ts) : "\u2014") + '</b><span class="tiny">last session</span></div>' +
-      '<div class="stat stat-accent"><b>' + fmtVol(tw) + '</b><span class="tiny">week volume</span></div>' +
-      '<div class="stat"><b>' + liftLabel + '</b><span class="tiny">lift progress</span></div>';
+    var session = load("il_session", null);
+    var live = session && session.exercises && session.exercises.length;
+    var bar = view.querySelector("#startWork");
+    if (!bar) {
+      bar = document.createElement("button");
+      bar.type = "button";
+      bar.id = "startWork";
+      bar.className = "btn";
+      bar.style.cssText = "margin:4px 0 12px;min-height:52px;font-size:17px";
+      view.insertBefore(bar, view.firstChild);
+    } else if (view.firstChild !== bar) {
+      view.insertBefore(bar, view.firstChild);
+    }
+    bar.textContent = live ? "Resume workout" : "Start workout";
+    bar.setAttribute("data-act", live ? "go-workout" : "start-home");
+
+    var lastLine = last ? (last.name || "Workout") + " \u00b7 " + lastAgo(last.ts) : "No sessions yet";
+    var n = weekStreak();
+    var streakLine = n ? n + " week streak" : "No streak yet";
+    var pr = latestPr();
+    var prLine = pr ? shortName(pr.n) + " \u00b7 " + pr.w + " kg" + (pr.r ? " \u00d7 " + pr.r : "") : "No PRs yet";
+
+    var box = view.querySelector(".stats");
+    if (box) {
+      box.setAttribute("data-dash", "1");
+      box.innerHTML =
+        '<div class="stat"><b style="font-size:13px;line-height:1.25">' + esc(last ? lastAgo(last.ts) : "\u2014") + '</b><span class="tiny">Last workout</span></div>' +
+        '<div class="stat stat-accent"><b style="font-size:13px;line-height:1.25">' + esc(n ? n + " wk" : "\u2014") + '</b><span class="tiny">Streak</span></div>' +
+        '<div class="stat"><b style="font-size:13px;line-height:1.25">' + esc(pr ? pr.w + " kg" : "\u2014") + '</b><span class="tiny">Latest PR</span></div>';
+    }
+    var snap = view.querySelector("#homeSnap");
+    if (!snap) {
+      snap = document.createElement("div");
+      snap.id = "homeSnap";
+      if (box && box.nextSibling) view.insertBefore(snap, box.nextSibling);
+      else bar.insertAdjacentElement("afterend", snap);
+    }
+    snap.innerHTML =
+      '<div class="card"><div class="tiny">Last workout</div><div class="ex-name" style="margin-top:4px">' + esc(last ? (last.name || "Workout") : "None yet") + '</div><div class="tiny" style="margin-top:4px">' + esc(lastLine) + '</div></div>' +
+      '<div class="card"><div class="tiny">Current streak</div><div class="ex-name" style="margin-top:4px">' + esc(streakLine) + '</div><div class="tiny" style="margin-top:4px">' + workouts().length + ' sessions logged</div></div>' +
+      '<div class="card"><div class="tiny">Most recent PR</div><div class="ex-name" style="margin-top:4px">' + esc(pr ? shortName(pr.n) : "None yet") + '</div><div class="tiny" style="margin-top:4px">' + esc(prLine) + (pr && pr.ts ? " \u00b7 " + fmtDay(pr.ts) : "") + '</div></div>';
+    var streakEl = view.querySelector("#homeStreak");
+    if (streakEl) streakEl.style.display = "none";
   }
   function paintFeed(view) {
     if (view.querySelector("#homeFeed")) return;
-    var ws = workouts();
-    var last = ws[0];
-    var html = "";
-    if (last) {
-      html += '<div class="card"><div class="row space"><div class="tiny">Last session</div><div class="tiny">' + fmtDay(last.ts) + '</div></div>';
-      html += '<div class="ex-name" style="margin-top:4px">' + esc(last.name || "Workout") + '</div>';
-      (last.exercises || []).slice(0, 5).forEach(function (e) {
-        var best = 0, reps = "";
-        (e.sets || []).forEach(function (s) {
-          if (s.done && Number(s.w) >= best) { best = Number(s.w); reps = s.r || ""; }
-        });
-        html += '<div class="row space" style="margin-top:8px"><div class="grow">' + esc(shortName(e.n)) + '</div><div class="tiny">' + (best ? best + " kg" + (reps ? " \u00d7 " + reps : "") : "\u2014") + '</div></div>';
-      });
-      html += '</div>';
-    }
     var movers = liftDeltas().slice(0, 4);
-    if (movers.length) {
-      html += '<div class="card"><div class="tiny">Moving lifts</div>';
-      movers.forEach(function (r) {
-        var sign = r.pct >= 0 ? "+" : "";
-        var col = r.pct > 0.5 ? "#b7e39a" : r.pct < -0.5 ? "#ff6b3d" : "var(--muted)";
-        html += '<div class="row space" style="margin-top:8px"><div class="grow">' + esc(shortName(r.n)) + '<div class="tiny">' + r.prev + ' \u2192 ' + r.now + ' kg</div></div><div style="font-weight:700;color:' + col + '">' + sign + r.pct.toFixed(0) + '%</div></div>';
-      });
-      html += '</div>';
-    }
-    if (!html) return;
+    if (!movers.length) return;
+    var html = '<div class="card"><div class="tiny">Moving lifts</div>';
+    movers.forEach(function (r) {
+      var sign = r.pct >= 0 ? "+" : "";
+      var col = r.pct > 0.5 ? "#b7e39a" : r.pct < -0.5 ? "#ff6b3d" : "var(--muted)";
+      html += '<div class="row space" style="margin-top:8px"><div class="grow">' + esc(shortName(r.n)) + '<div class="tiny">' + r.prev + ' \u2192 ' + r.now + ' kg</div></div><div style="font-weight:700;color:' + col + '">' + sign + r.pct.toFixed(0) + '%</div></div>';
+    });
+    html += '</div>';
     var feed = document.createElement("div");
     feed.id = "homeFeed";
     feed.innerHTML = html;
-    var stats = view.querySelector(".stats");
+    var snap = view.querySelector("#homeSnap");
     var head = view.querySelector(".sec-head") || view.querySelector("[data-tpl-id]");
-    if (stats && stats.nextSibling) view.insertBefore(feed, stats.nextSibling);
+    if (snap && snap.nextSibling) view.insertBefore(feed, snap.nextSibling);
     else if (head) view.insertBefore(feed, head);
     else view.appendChild(feed);
   }
@@ -215,6 +231,25 @@
     var sheet = document.getElementById("sheet"), modal = document.getElementById("modal");
     if (sheet && modal) { sheet.innerHTML = html; modal.classList.add("show"); }
   }
+  function startFromHome() {
+    var session = load("il_session", null);
+    if (session && session.exercises && session.exercises.length) {
+      var train = document.querySelector('.nav button[data-view="workout"]');
+      if (train) train.click();
+      return;
+    }
+    var routines = load("il_routines", []);
+    var pinned = favs();
+    var pick = routines.filter(function (r) { return pinned.indexOf(r.id) !== -1; })[0] || routines[0];
+    if (pick) {
+      var btn = document.querySelector('[data-act="load-routine"][data-id="' + pick.id + '"]');
+      if (btn) { btn.click(); return; }
+      openTemplate(pick.id);
+      return;
+    }
+    var train = document.querySelector('.nav button[data-view="workout"]');
+    if (train) train.click();
+  }
   function bindTemplates(view) {
     var editOn = !!load("il_tpl_edit", false);
     var pinned = favs();
@@ -266,8 +301,9 @@
   }
   function scrub(view) {
     Array.prototype.slice.call(view.querySelectorAll("button")).forEach(function (el) {
+      if (el.id === "startWork") return;
       var t = (el.textContent || "").replace(/\s+/g, " ").trim();
-      if (/^repeat/i.test(t) || t === "Quick add from gear" || t === "Browse dumbbells and machines" || t === "Install app" || t === "Install on iPhone") el.remove();
+      if (/^repeat/i.test(t) || t === "Quick add from gear" || t === "Browse dumbbells and machines" || t === "Install app" || t === "Install on iPhone" || t === "Start empty workout") el.remove();
     });
   }
   function polishHome() {
@@ -275,10 +311,10 @@
     if (!view) return;
     view.classList.add("ready");
     if (!view.classList.contains("active") || lock) return;
-    if (!view.querySelector(".stats") && !view.querySelector(".card")) return;
+    if (!view.querySelector(".stats") && !view.querySelector(".card") && !view.querySelector("#startWork")) return;
     lock = true;
     try {
-      paintDash(view);
+      paintAction(view);
       scrub(view);
       var vol = view.querySelector("#volWeek");
       if (vol) vol.style.display = "none";
@@ -307,6 +343,12 @@
     if (btn) btn.click();
   }
   document.addEventListener("click", function (e) {
+    if (e.target.closest("[data-act='start-home'], #startWork")) {
+      e.preventDefault();
+      e.stopPropagation();
+      startFromHome();
+      return;
+    }
     var star = e.target.closest("[data-act='fav-tpl']");
     if (star) {
       e.preventDefault();
