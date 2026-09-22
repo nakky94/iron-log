@@ -5,17 +5,22 @@
     s.textContent =
       "#view-history .card{padding:10px 12px;margin-bottom:6px;overflow:hidden}" +
       "#view-history .card .ex-name{display:block;width:100%;font-size:15px}" +
-      "#view-history .card .tiny{font-size:11px}" +
-      "#view-history .card .row{margin-top:4px!important}" +
       "#view-history .log-acts{display:flex;gap:4px;margin-top:8px}" +
       "#view-history .log-acts .btn{float:none!important;flex:1;width:auto!important;max-width:none!important;min-width:0;padding:6px 4px;min-height:34px;height:34px;font-size:12px;border-radius:10px}" +
-      "#view-history .card > .btn{float:none!important}" +
-      "#view-library .card{padding:10px 12px;margin-bottom:6px}" +
       "#view-library .card .btn{float:none;width:auto!important;min-width:56px;padding:6px 10px;min-height:34px}" +
-      "#view-history .chips .chip,#view-library .chip{min-height:34px;padding:6px 11px}" +
-      ".card{padding:10px 12px;margin-bottom:6px}" +
-      ".stats{margin:2px 0 6px;gap:4px}" +
-      ".stat{padding:6px 4px}";
+      "#view-workout .card{position:relative;padding:12px 12px 10px}" +
+      "#view-workout .card > .btn.warn,#view-workout .card > [data-act='remove-ex']{position:absolute;top:8px;right:8px;width:36px!important;min-width:36px;max-width:36px;padding:6px;min-height:36px}" +
+      "#view-workout .ex-name{padding-right:44px}" +
+      "#view-workout .set-grid{grid-template-columns:22px minmax(108px,1.35fr) minmax(70px,.9fr) 44px 28px;gap:5px;align-items:center}" +
+      "#view-workout .step-wrap{display:flex;align-items:center;gap:3px;min-width:0}" +
+      "#view-workout .step{width:28px;min-width:28px;height:40px;padding:0;font-size:16px}" +
+      "#view-workout .step-wrap input,#view-workout .set-grid input{min-width:0;flex:1;padding:8px 4px;min-height:40px;font-size:16px}" +
+      "#view-workout .ghost-set{grid-column:1/-1;margin:0;padding:0 0 2px 22px}" +
+      "#view-workout [data-act='toggle-set']{width:44px;height:44px;border-radius:12px;background:#2a2a2a;border:1px solid #444;color:#111}" +
+      "#view-workout [data-act='toggle-set']:not(.ghost){background:#FFD400;border-color:#FFD400}" +
+      "#view-workout [data-act='del-set']{width:28px;min-height:40px}" +
+      "#restBar{margin-top:8px}" +
+      ".sess-bar{margin-top:8px}";
   }
   function hideJunk(view) {
     if (!view) return;
@@ -50,7 +55,7 @@
     t = setTimeout(function () { t = null; run(); }, 60);
   }
   function boot() {
-    ["view-home", "view-library", "view-history"].forEach(function (id) {
+    ["view-home", "view-library", "view-history", "view-workout"].forEach(function (id) {
       var n = document.getElementById(id);
       if (n) new MutationObserver(schedule).observe(n, { childList: true });
     });
