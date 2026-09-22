@@ -11,7 +11,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon.svg" />
   <style>
-    :root{--bg:#0a0a0a;--bg-2:#141414;--card:#141414;--card-2:#1c1c1c;--line:#222;--text:#f4f4f5;--muted:#8d8d8d;--accent:#FFD400;--warn:#ff6b3d;--radius:18px;--safe-b:env(safe-area-inset-bottom, 0px);--safe-t:env(safe-area-inset-top, 0px);--nav-h:56px;}
+    :root{--bg:#0a0a0a;--bg-2:#141414;--card:#141414;--card-2:#1c1c1c;--line:#222;--text:#f4f4f5;--muted:#8d8d8d;--accent:#FFD400;--warn:#ff6b3d;--radius:18px;--safe-b:env(safe-area-inset-bottom, 0px);--safe-t:env(safe-area-inset-top, 0px);--nav-h:62px;}
     *{box-sizing:border-box;margin:0;padding:0}
     html,body{min-height:100dvh;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
     body{padding-bottom:calc(var(--nav-h) + var(--safe-b) + 16px)}
@@ -24,11 +24,10 @@
     #dateLabel,#unitBtn,#installBtn,#homeInstall,[data-act='repeat-last'],#view-home [data-act='start-fresh']{display:none !important}
     .view{display:none;padding:8px 16px calc(var(--nav-h) + var(--safe-b) + 20px)}
     .view.active{display:block}
-    .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:520px;display:grid;grid-template-columns:repeat(5,1fr);background:#0a0a0a;border-top:1px solid #161616;padding:4px 8px calc(6px + var(--safe-b));z-index:30}
-    .nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-size:10px;font-weight:600;min-height:40px}
-    .nav button span{display:none}
+    .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:520px;display:grid;grid-template-columns:repeat(5,1fr);background:#0a0a0a;border-top:1px solid #161616;padding:6px 8px calc(8px + var(--safe-b));z-index:30}
+    .nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-size:10px;font-weight:600;min-height:44px}
+    .nav button span{display:block;margin-top:2px}
     .nav button.active{color:var(--text)}
-    .nav button.active span{display:block}
     .nav button.active svg{color:var(--accent)}
     .nav svg{width:20px;height:20px}
     .card{background:var(--card);border:1px solid #1e1e1e;border-radius:var(--radius);padding:14px;margin-bottom:10px;text-align:left;position:relative}
@@ -42,7 +41,7 @@
     .btn.sm{width:auto;padding:8px 12px;min-height:40px}
     .chip{flex:0 0 auto;background:#161616;border:1px solid #222;border-radius:999px;padding:7px 12px;font-size:13px;color:var(--muted);min-height:36px}
     .chip.on{background:var(--accent);color:#111;font-weight:700}
-    .chips{display:flex;gap:8px;overflow-x:auto;margin:8px 0 12px;scrollbar-width:none}
+    .chips{display:flex;gap:8px;overflow-x:auto;margin:8px 0 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
     .chips::-webkit-scrollbar{display:none}
     input,select,textarea{width:100%;background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:16px}
     .ex-name{font-weight:700;text-align:left;letter-spacing:-.02em}
@@ -50,7 +49,7 @@
     .set-grid input{text-align:center;padding:8px 4px;min-height:44px;font-size:16px}
     .step-wrap{display:flex;align-items:center;gap:3px;min-width:0}
     .step-wrap input{flex:1;min-width:0}
-    .step{width:28px;height:40px;border-radius:10px;background:#1c1c1c;font-weight:800}
+    .step{width:44px;height:44px;border-radius:10px;background:#1c1c1c;font-weight:800}
     .rir-row{display:flex;gap:6px;margin-top:10px;align-items:center}
     .rir{width:36px;height:36px;border-radius:10px;background:#1c1c1c;color:var(--muted);font-weight:700}
     .rir.on{background:var(--accent);color:#111}
@@ -67,14 +66,12 @@
     .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 10px}
     .stat{text-align:center;background:var(--card);border:1px solid #1e1e1e;border-radius:16px;padding:10px 4px;display:flex;flex-direction:column;gap:4px;min-height:68px;justify-content:center}
     .stat b{font-size:18px;font-variant-numeric:tabular-nums}
-    .stat .tiny{font-size:9px;text-transform:uppercase;letter-spacing:.08em}
+    .stat .tiny{font-size:9px;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
     .stat-accent{background:#19160a;border-color:#2a2610}
     .stat-accent b{color:var(--accent)}
     .set-grid [data-act='toggle-set']{width:44px;height:44px;border-radius:12px;font-weight:800;background:#1c1c1c;border:1px solid #333}
     .set-grid [data-act='toggle-set']:not(.ghost){background:var(--accent);color:#111;border-color:var(--accent)}
     .heat{display:flex;gap:6px;overflow-x:auto;margin:0 0 10px}
-    .heat span{flex:0 0 auto;font-size:11px;padding:5px 9px;border-radius:999px;background:#1a1a1a;color:#6a6a6a}
-    .heat span.on{background:#1d1a0a;color:var(--accent);font-weight:700}
     #prToast{position:fixed;left:50%;bottom:calc(var(--nav-h) + var(--safe-b) + 16px);transform:translateX(-50%);background:var(--accent);color:#111;font-weight:800;padding:12px 16px;border-radius:14px;opacity:0;pointer-events:none;z-index:60}
     #prToast.show{opacity:1}
   </style>
@@ -118,5 +115,6 @@
   <script src="restctl.js" defer></script>
   <script src="layout.js" defer></script>
   <script src="pro.js" defer></script>
+  <script src="mobile.js" defer></script>
 </body>
 </html>
