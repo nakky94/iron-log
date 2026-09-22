@@ -1,5 +1,5 @@
-const CACHE = "gym-log-v75";
-const ASSETS = ["/", "/index.html", "/perf.js", "/app.js", "/suggest.js", "/extra.js", "/more.js", "/cues.js", "/backup.js", "/homeui.js", "/trainsets.js", "/restfix.js", "/volume.js", "/plus.js", "/typefix.js", "/restctl.js", "/layout.js", "/sesspause.js", "/delfix.js", "/pro.js", "/mobile.js", "/history.js", "/prs.js", "/charts.js", "/gear.js", "/timers.js", "/nav.js", "/continue.js", "/units.js", "/parse.worker.js", "/manifest.webmanifest", "/icon.svg"];
+const CACHE = "gym-log-v76";
+const ASSETS = ["/", "/index.html", "/perf.js", "/app.js", "/suggest.js", "/extra.js", "/more.js", "/cues.js", "/backup.js", "/homeui.js", "/trainsets.js", "/restfix.js", "/volume.js", "/plus.js", "/typefix.js", "/restctl.js", "/layout.js", "/sesspause.js", "/delfix.js", "/pro.js", "/mobile.js", "/history.js", "/prs.js", "/charts.js", "/gear.js", "/timers.js", "/nav.js", "/continue.js", "/units.js", "/polish.js", "/parse.worker.js", "/manifest.webmanifest", "/icon.svg"];
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
