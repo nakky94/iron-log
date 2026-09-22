@@ -4,13 +4,26 @@
   function sess() { return load("il_session", null); }
   function routines() { return load("il_routines", []); }
   function clock() { try { return JSON.parse(localStorage.getItem("il_clock") || "{}"); } catch (e) { return {}; } }
-  function lastSets(name) {
+  function lastHit(name) {
     var ws = workouts();
     for (var i = 0; i < ws.length; i++) {
       var found = (ws[i].exercises || []).filter(function (e) { return e.n === name; })[0];
-      if (found && found.sets && found.sets.length) return found.sets;
+      if (found && found.sets && found.sets.length) return { sets: found.sets, ts: ws[i].ts };
     }
-    return [];
+    return { sets: [], ts: 0 };
+  }
+  function lastSets(name) { return lastHit(name).sets; }
+  function prevLine(name) {
+    var hit = lastHit(name);
+    var sets = (hit.sets || []).filter(function (s) { return s.w || s.r; });
+    if (!sets.length) return "No previous";
+    var weights = sets.map(function (s) { return String(s.w || ""); });
+    var same = weights.every(function (w) { return w === weights[0]; });
+    var reps = sets.map(function (s) { return s.r || "\u2014"; }).join(", ");
+    var when = hit.ts ? new Date(hit.ts).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "";
+    if (same && weights[0]) return "Previous: " + weights[0] + " kg \u00d7 " + reps + (when ? " \u00b7 " + when : "");
+    var bits = sets.map(function (s) { return (s.w || "\u2014") + "\u00d7" + (s.r || "\u2014"); }).join(", ");
+    return "Previous: " + bits + (when ? " \u00b7 " + when : "");
   }
   function weekStart(offset) {
     var now = new Date(), day = (now.getDay() + 6) % 7;
@@ -50,6 +63,7 @@
       "#view-workout .set-grid.tiny{grid-template-columns:24px 70px 1fr 70px 44px;font-size:10px;letter-spacing:.06em;color:#6a6a6a;text-transform:uppercase}" +
       "#view-workout .set-grid:not(.tiny){grid-template-columns:24px 70px minmax(96px,1.2fr) minmax(64px,.8fr) 44px}" +
       "#view-workout .prev-cell{font-size:11px;color:#6a6a6a;font-variant-numeric:tabular-nums}" +
+      "#view-workout .prev-line{margin-top:6px;font-size:13px;color:#cfcfcf;font-weight:600}" +
       "#view-workout .ghost-set,#view-workout [data-act='del-set']{display:none!important}" +
       "#weekCal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:0 0 12px}" +
       "#weekCal .d{text-align:center;padding:8px 0;border-radius:12px;background:#141414;border:1px solid #1e1e1e}" +
@@ -70,6 +84,19 @@
     var view = document.getElementById("view-workout");
     if (!view || !view.classList.contains("active")) return;
     var s = sess();
+    Array.prototype.slice.call(view.querySelectorAll("#view-workout .card")).forEach(function (card) {
+      if (card.id === "emptyStarts" || card.querySelector(".prev-line")) return;
+      var wIn = card.querySelector("[data-act='set-w']");
+      if (!wIn) return;
+      var i = Number(wIn.getAttribute("data-i"));
+      var name = s && s.exercises && s.exercises[i] ? s.exercises[i].n : "";
+      var line = document.createElement("div");
+      line.className = "prev-line";
+      line.textContent = prevLine(name);
+      var title = card.querySelector(".ex-name");
+      if (title && title.parentNode) title.parentNode.appendChild(line);
+      else card.insertBefore(line, card.firstChild.nextSibling);
+    });
     Array.prototype.slice.call(view.querySelectorAll(".set-grid.tiny")).forEach(function (h) {
       if (h.getAttribute("data-pro")) return;
       h.setAttribute("data-pro", "1");
