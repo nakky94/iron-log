@@ -5,7 +5,6 @@
   function saveSess(s) { localStorage.setItem("il_session", JSON.stringify(s)); }
   function workouts() { return load("il_workouts", []); }
   function uid() { return Math.random().toString(36).slice(2, 10); }
-  function restSec() { return Number(load("il_rest", 90)) || 90; }
   function typing() {
     var a = document.activeElement;
     return !!(a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA"));
@@ -64,46 +63,6 @@
   function hideModalTimer() {
     var ov = document.getElementById("timer");
     if (ov) ov.classList.remove("show");
-  }
-  function restLeft() {
-    return Math.max(0, Math.ceil((restUntil - Date.now()) / 1000));
-  }
-  function paintRest() {
-    if (!restChip || !restChip.isConnected) return false;
-    var left = restLeft();
-    var label = "Rest  " + fmtClock(left) + "   skip";
-    if (restChip.getAttribute("data-t") !== label) {
-      restChip.setAttribute("data-t", label);
-      restChip.innerHTML = 'Rest <span class="rest-num">' + fmtClock(left) + "</span> skip";
-    }
-    if (left <= 10) restChip.classList.add("warn");
-    else restChip.classList.remove("warn");
-    if (left <= 0) {
-      clearInterval(restTick); restTick = null; restUntil = 0;
-      restChip.remove(); restChip = null;
-      if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
-      return false;
-    }
-    return true;
-  }
-  function startInlineRest(card, sec) {
-    hideModalTimer();
-    if (!card) return;
-    restUntil = Date.now() + (sec || restSec()) * 1000;
-    Array.prototype.slice.call(document.querySelectorAll(".rest-chip")).forEach(function (c) {
-      if (c.parentNode !== card) c.remove();
-    });
-    restChip = card.querySelector(".rest-chip");
-    if (!restChip) {
-      restChip = document.createElement("button");
-      restChip.type = "button";
-      restChip.className = "rest-chip";
-      restChip.setAttribute("data-act", "skip-inline-rest");
-      card.appendChild(restChip);
-    }
-    paintRest();
-    clearInterval(restTick);
-    restTick = setInterval(paintRest, 200);
   }
   function sessionStats() {
     var s = loadSess() || { exercises: [], ts: Date.now() };
@@ -169,20 +128,9 @@
       else if (!v || !v.classList.contains("active")) { clearInterval(sessTick); sessTick = null; }
     }, 1000);
     hideModalTimer();
-    Array.prototype.slice.call(view.querySelectorAll(".card .tiny")).forEach(function (el) {
-      var t = el.textContent || "";
-      if (/dumbbell|machine/i.test(t)) el.textContent = t.replace(/dumbbell/ig, "Dumbbell").replace(/machine/ig, "Machine");
-    });
     var sess = loadSess();
     Array.prototype.slice.call(view.querySelectorAll(".set-grid")).forEach(function (row) {
-      if (row.classList.contains("tiny")) {
-        if (row.children.length === 4 && !row.querySelector("[data-col='del']")) {
-          var h = document.createElement("div");
-          h.setAttribute("data-col", "del");
-          row.appendChild(h);
-        }
-        return;
-      }
+      if (row.classList.contains("tiny")) return;
       var wIn = row.querySelector("[data-act='set-w']");
       var rIn = row.querySelector("[data-act='set-r']");
       var chk = row.querySelector("[data-act='toggle-set']");
@@ -221,10 +169,6 @@
         row.appendChild(b);
       }
     });
-    if (restUntil > Date.now()) {
-      var live = document.querySelector(".rest-chip");
-      if (live) restChip = live;
-    }
   }
   function deleteSet(i, si) {
     var s = loadSess();
@@ -268,40 +212,21 @@
       e.stopPropagation();
       return;
     }
-    if (e.target.closest("[data-act='skip-inline-rest']")) {
-      restUntil = 0;
-      clearInterval(restTick); restTick = null;
-      if (restChip) restChip.remove();
-      restChip = null;
-      hideModalTimer();
-      return;
-    }
     var tog = e.target.closest("[data-act='toggle-set']");
     if (tog) {
-      var card = tog.closest(".card");
-      var i = Number(tog.getAttribute("data-i"));
-      var si = Number(tog.getAttribute("data-si"));
       setTimeout(function () {
         hideModalTimer();
         var s = loadSess();
+        var i = Number(tog.getAttribute("data-i"));
+        var si = Number(tog.getAttribute("data-si"));
         var set = s && s.exercises && s.exercises[i] && s.exercises[i].sets[si];
         if (set && set.done) {
-          var fresh = document.getElementById("view-workout");
-          var cards = fresh ? fresh.querySelectorAll(".card") : [];
-          startInlineRest(cards[i] || card, restSec());
           var name = s.exercises[i].n;
           var w = Number(set.w) || 0;
           var prev = bestEver(name);
           if (w && w > prev) toast("New best " + name.replace(/^Dumbbell\s/, "") + " \u00b7 " + w + " kg");
         }
       }, 40);
-    }
-    if (e.target.closest("[data-act='start-timer']")) {
-      setTimeout(function () {
-        hideModalTimer();
-        var card = e.target.closest(".card");
-        startInlineRest(card, restSec());
-      }, 20);
     }
   }, true);
   var timer = null;
@@ -313,10 +238,7 @@
   function boot() {
     var w = document.getElementById("view-workout");
     if (w) new MutationObserver(schedule).observe(w, { childList: true });
-    var h = document.getElementById("view-home");
-    if (h) new MutationObserver(schedule).observe(h, { childList: true });
     enhance();
-    paintHeat();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
