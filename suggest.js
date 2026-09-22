@@ -2,7 +2,6 @@
   var BOWFLEX = [2.3,3.4,4.5,5.7,6.8,7.9,9.1,10.2,11.3,12.5,13.6,14.7,15.9,18.1,20.4,22.7,23.8,24.9,27.2,29.5,31.8,34.0,36.3,38.6,40.8];
   function load(k, fb) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } }
   function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
-  save("il_unit", "kg");
   function nearestStep(w, steps) {
     var n = Number(w), best = steps[0], d = Math.abs(n - best);
     steps.forEach(function (s) { var x = Math.abs(n - s); if (x < d) { d = x; best = s; } });
