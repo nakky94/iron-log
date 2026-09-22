@@ -1,17 +1,21 @@
 (function () {
   function styles() {
-    if (document.getElementById("layoutFixStyle")) return;
-    var s = document.createElement("style");
-    s.id = "layoutFixStyle";
+    var s = document.getElementById("layoutFixStyle");
+    if (!s) { s = document.createElement("style"); s.id = "layoutFixStyle"; document.head.appendChild(s); }
     s.textContent =
-      "#view-history .card{overflow:hidden}" +
-      "#view-history .card .ex-name{display:block;width:100%;padding-right:0}" +
-      "#view-history .log-acts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}" +
-      "#view-history .log-acts .btn{float:none!important;width:100%!important;max-width:none!important;min-width:0;padding:8px 4px;min-height:40px;font-size:13px}" +
+      "#view-history .card{padding:10px 12px;margin-bottom:6px;overflow:hidden}" +
+      "#view-history .card .ex-name{display:block;width:100%;font-size:15px}" +
+      "#view-history .card .tiny{font-size:11px}" +
+      "#view-history .card .row{margin-top:4px!important}" +
+      "#view-history .log-acts{display:flex;gap:4px;margin-top:8px}" +
+      "#view-history .log-acts .btn{float:none!important;flex:1;width:auto!important;max-width:none!important;min-width:0;padding:6px 4px;min-height:34px;height:34px;font-size:12px;border-radius:10px}" +
       "#view-history .card > .btn{float:none!important}" +
-      "#view-library .card .btn{float:none;width:auto!important;max-width:none;min-width:64px;padding:8px 12px}" +
-      "#view-history .card .row.space{align-items:flex-start}";
-    document.head.appendChild(s);
+      "#view-library .card{padding:10px 12px;margin-bottom:6px}" +
+      "#view-library .card .btn{float:none;width:auto!important;min-width:56px;padding:6px 10px;min-height:34px}" +
+      "#view-history .chips .chip,#view-library .chip{min-height:34px;padding:6px 11px}" +
+      ".card{padding:10px 12px;margin-bottom:6px}" +
+      ".stats{margin:2px 0 6px;gap:4px}" +
+      ".stat{padding:6px 4px}";
   }
   function hideJunk(view) {
     if (!view) return;
@@ -27,34 +31,17 @@
     if (!view) return;
     Array.prototype.slice.call(view.querySelectorAll(".card")).forEach(function (card) {
       if (card.querySelector(".log-acts")) return;
-      var btns = Array.prototype.slice.call(card.querySelectorAll(":scope > .btn, :scope > .row .btn, :scope > button.btn"));
-      if (!btns.length) {
-        btns = Array.prototype.slice.call(card.querySelectorAll(".btn"));
-      }
+      var btns = Array.prototype.slice.call(card.querySelectorAll(".btn"));
       if (!btns.length) return;
       var row = document.createElement("div");
       row.className = "log-acts";
-      btns.forEach(function (b) {
-        b.style.float = "none";
-        b.style.width = "100%";
-        row.appendChild(b);
-      });
+      btns.forEach(function (b) { row.appendChild(b); });
       card.appendChild(row);
-    });
-  }
-  function compactGear() {
-    var view = document.getElementById("view-library");
-    if (!view) return;
-    Array.prototype.slice.call(view.querySelectorAll(".card .btn")).forEach(function (b) {
-      b.style.width = "auto";
-      b.style.float = "none";
-      b.style.minWidth = "64px";
     });
   }
   function run() {
     styles();
     hideJunk(document.getElementById("view-home"));
-    compactGear();
     tidyLog();
   }
   var t = null;
