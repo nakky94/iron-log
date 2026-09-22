@@ -12,15 +12,15 @@
     }
     return [];
   }
-  function weekDays() {
+  function weekStart(offset) {
     var now = new Date(), day = (now.getDay() + 6) % 7;
-    var start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
-    start.setHours(0, 0, 0, 0);
-    var out = [];
-    for (var i = 0; i < 7; i++) {
-      var d = new Date(start.getTime() + i * 864e5);
-      out.push(d);
-    }
+    var s = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day - (offset || 0) * 7);
+    s.setHours(0, 0, 0, 0);
+    return s.getTime();
+  }
+  function weekDays() {
+    var start = weekStart(0), out = [];
+    for (var i = 0; i < 7; i++) out.push(new Date(start + i * 864e5));
     return out;
   }
   function trainedOn(ts) {
@@ -30,39 +30,41 @@
       return a.getTime() === b.getTime();
     });
   }
-  function streak() {
-    var days = {};
-    workouts().forEach(function (w) {
-      var d = new Date(w.ts); d.setHours(0, 0, 0, 0);
-      days[d.getTime()] = true;
-    });
-    var n = 0, cur = new Date(); cur.setHours(0, 0, 0, 0);
-    if (!days[cur.getTime()]) cur = new Date(cur.getTime() - 864e5);
-    while (days[cur.getTime()]) { n += 1; cur = new Date(cur.getTime() - 864e5); }
+  function weekStreak() {
+    var n = 0, i = 0;
+    if (!workouts().some(function (w) { return w.ts >= weekStart(0); })) i = 1;
+    while (true) {
+      var from = weekStart(i), to = from + 7 * 864e5;
+      var hit = workouts().some(function (w) { return w.ts >= from && w.ts < to; });
+      if (!hit) break;
+      n += 1; i += 1;
+      if (i > 80) break;
+    }
     return n;
   }
   function styles() {
-    if (document.getElementById("proStyle")) return;
-    var s = document.createElement("style");
-    s.id = "proStyle";
+    var s = document.getElementById("proStyle");
+    if (!s) { s = document.createElement("style"); s.id = "proStyle"; document.head.appendChild(s); }
     s.textContent =
+      ".nav button span{display:block;margin-top:2px;font-size:10px}" +
       "#view-workout .set-grid.tiny{grid-template-columns:24px 70px 1fr 70px 44px;font-size:10px;letter-spacing:.06em;color:#6a6a6a;text-transform:uppercase}" +
       "#view-workout .set-grid:not(.tiny){grid-template-columns:24px 70px minmax(96px,1.2fr) minmax(64px,.8fr) 44px}" +
-      "#view-workout .prev-cell{font-size:11px;color:#6a6a6a;font-variant-numeric:tabular-nums;line-height:1.2}" +
+      "#view-workout .prev-cell{font-size:11px;color:#6a6a6a;font-variant-numeric:tabular-nums}" +
       "#view-workout .ghost-set,#view-workout [data-act='del-set']{display:none!important}" +
       "#weekCal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:0 0 12px}" +
       "#weekCal .d{text-align:center;padding:8px 0;border-radius:12px;background:#141414;border:1px solid #1e1e1e}" +
       "#weekCal .d.on{background:#19160a;border-color:#2a2610}" +
       "#weekCal .d.on b{color:#FFD400}" +
       "#weekCal .d.today{border-color:#FFD400}" +
-      "#weekCal .d span{display:block;font-size:9px;color:#6a6a6a;text-transform:uppercase;letter-spacing:.06em}" +
+      "#weekCal .d span{display:block;font-size:9px;color:#6a6a6a;text-transform:uppercase}" +
       "#weekCal .d b{display:block;font-size:15px;margin-top:2px}" +
       ".finish-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}" +
       ".finish-stats div{background:#1a1a1a;border-radius:14px;padding:12px 8px;text-align:center}" +
       ".finish-stats b{display:block;font-size:18px}" +
       "#emptyStarts .btn{margin-top:8px}" +
-      "#homeStreak{margin:0 0 10px;font-size:13px;color:#8d8d8d}";
-    document.head.appendChild(s);
+      "#homeStreak{margin:0 0 12px;font-size:12px;color:#8d8d8d}" +
+      "#view-home .heat{display:none!important}" +
+      ".stat .tiny{font-size:9px;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}";
   }
   function paintTrain() {
     var view = document.getElementById("view-workout");
@@ -84,7 +86,7 @@
       var prev = prevList[si] || prevList[prevList.length - 1] || {};
       var cell = document.createElement("div");
       cell.className = "prev-cell";
-      cell.textContent = (prev.w || "—") + "×" + (prev.r || "—");
+      cell.textContent = (prev.w || "\u2014") + "\u00d7" + (prev.r || "\u2014");
       var first = row.firstElementChild;
       if (first && first.nextSibling) row.insertBefore(cell, first.nextSibling);
       else row.appendChild(cell);
@@ -95,16 +97,15 @@
         box.id = "emptyStarts";
         box.className = "card";
         var rts = routines();
-        var html = '<div class="ex-name">Start a session</div><div class="tiny" style="margin:6px 0 4px">Same flow as Strong — pick a routine, log sets, tick them off.</div>';
+        var html = '<div class="ex-name">Start a session</div><div class="tiny" style="margin:6px 0 4px">Pick a routine, then tick sets.</div>';
         rts.forEach(function (r) {
           html += '<button class="btn" type="button" data-act="load-routine" data-id="' + r.id + '">Start ' + (r.name || "routine") + "</button>";
         });
         html += '<button class="btn ghost" type="button" data-act="go-library">Add from Gear</button>';
         box.innerHTML = html;
-        var empty = view.querySelector(".empty, .card");
-        if (empty) empty.insertAdjacentElement("afterend", box);
-        else view.appendChild(box);
+        view.appendChild(box);
       }
+      Array.prototype.slice.call(view.querySelectorAll(".empty")).forEach(function (el) { el.style.display = "none"; });
     } else {
       var es = view.querySelector("#emptyStarts");
       if (es) es.remove();
@@ -130,14 +131,26 @@
   function paintHome() {
     var view = document.getElementById("view-home");
     if (!view || !view.classList.contains("active")) return;
-    if (view.querySelector("#homeStreak")) return;
-    var n = streak();
-    var el = document.createElement("div");
-    el.id = "homeStreak";
-    el.textContent = n ? n + " day streak" : "Log a session to start a streak";
+    Array.prototype.slice.call(view.querySelectorAll(".stat .tiny")).forEach(function (el) {
+      var t = (el.textContent || "").trim().toLowerCase();
+      if (t.indexOf("last") === 0) el.textContent = "Last";
+      else if (t.indexOf("week") === 0 || t.indexOf("volume") >= 0) el.textContent = "Volume";
+      else if (t.indexOf("lift") === 0) el.textContent = "Lifts";
+    });
+    var ws = workouts();
+    var n = weekStreak();
+    var text = ws.length ? (n ? n + " week streak \u00b7 " + ws.length + " sessions" : ws.length + " sessions logged") : "Start a template to begin";
+    var el = view.querySelector("#homeStreak");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "homeStreak";
+      var stats = view.querySelector(".stats");
+      if (stats) stats.insertAdjacentElement("afterend", el);
+      else view.insertBefore(el, view.firstChild);
+    }
+    el.textContent = text;
     var stats = view.querySelector(".stats");
-    if (stats) stats.insertAdjacentElement("afterend", el);
-    else view.insertBefore(el, view.firstChild);
+    if (stats && el.previousSibling !== stats) stats.insertAdjacentElement("afterend", el);
   }
   function fmtClock(sec) {
     sec = Math.max(0, Math.floor(sec || 0));
