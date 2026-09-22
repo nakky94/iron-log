@@ -99,7 +99,7 @@
     return '<svg class="trend" viewBox="0 0 ' + w + ' ' + h + '" width="100%" height="56" preserveAspectRatio="none">' +
       '<polyline fill="none" stroke="#FFD400" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" points="' + d + '" />' +
       '<circle cx="' + lx.toFixed(1) + '" cy="' + ly.toFixed(1) + '" r="3.2" fill="#FFD400" /></svg>' +
-      '<div class="row space"><span class="tiny">' + fmtDay(pts[0].ts) + '</span><span class="tiny">' + pts.length + ' sessions · ' + fmtDay(last.ts) + '</span></div>';
+      '<div class="row space"><span class="tiny">' + fmtDay(pts[0].ts) + '</span><span class="tiny">' + pts.length + ' sessions \u00b7 ' + fmtDay(last.ts) + '</span></div>';
   }
   function paintDash(view) {
     var box = view.querySelector(".stats");
@@ -107,10 +107,10 @@
     var last = workouts()[0];
     var tw = weekVol(weekStart(0), weekStart(0) + 7 * 864e5);
     var avg = avgPct(liftDeltas());
-    var liftLabel = avg == null ? "—" : (avg >= 0 ? "+" : "") + avg.toFixed(0) + "%";
+    var liftLabel = avg == null ? "\u2014" : (avg >= 0 ? "+" : "") + avg.toFixed(0) + "%";
     box.setAttribute("data-dash", "1");
     box.innerHTML =
-      '<div class="stat"><b>' + (last ? lastAgo(last.ts) : "—") + '</b><span class="tiny">last session</span></div>' +
+      '<div class="stat"><b>' + (last ? lastAgo(last.ts) : "\u2014") + '</b><span class="tiny">last session</span></div>' +
       '<div class="stat stat-accent"><b>' + fmtVol(tw) + '</b><span class="tiny">week volume</span></div>' +
       '<div class="stat"><b>' + liftLabel + '</b><span class="tiny">lift progress</span></div>';
   }
@@ -127,7 +127,7 @@
         (e.sets || []).forEach(function (s) {
           if (s.done && Number(s.w) >= best) { best = Number(s.w); reps = s.r || ""; }
         });
-        html += '<div class="row space" style="margin-top:8px"><div class="grow">' + esc(shortName(e.n)) + '</div><div class="tiny">' + (best ? best + " kg" + (reps ? " × " + reps : "") : "—") + '</div></div>';
+        html += '<div class="row space" style="margin-top:8px"><div class="grow">' + esc(shortName(e.n)) + '</div><div class="tiny">' + (best ? best + " kg" + (reps ? " \u00d7 " + reps : "") : "\u2014") + '</div></div>';
       });
       html += '</div>';
     }
@@ -137,7 +137,7 @@
       movers.forEach(function (r) {
         var sign = r.pct >= 0 ? "+" : "";
         var col = r.pct > 0.5 ? "#b7e39a" : r.pct < -0.5 ? "#ff6b3d" : "var(--muted)";
-        html += '<div class="row space" style="margin-top:8px"><div class="grow">' + esc(shortName(r.n)) + '<div class="tiny">' + r.prev + ' → ' + r.now + ' kg</div></div><div style="font-weight:700;color:' + col + '">' + sign + r.pct.toFixed(0) + '%</div></div>';
+        html += '<div class="row space" style="margin-top:8px"><div class="grow">' + esc(shortName(r.n)) + '<div class="tiny">' + r.prev + ' \u2192 ' + r.now + ' kg</div></div><div style="font-weight:700;color:' + col + '">' + sign + r.pct.toFixed(0) + '%</div></div>';
       });
       html += '</div>';
     }
@@ -181,7 +181,7 @@
       var line = document.createElement("div");
       line.className = "row space pr-pct";
       line.style.marginTop = "8px";
-      line.innerHTML = '<span class="tiny">vs last ' + r.prev + " → " + r.now + ' kg</span><span style="font-weight:700;color:' + col + '">' + sign + r.pct.toFixed(0) + "%</span>";
+      line.innerHTML = '<span class="tiny">vs last ' + r.prev + " \u2192 " + r.now + ' kg</span><span style="font-weight:700;color:' + col + '">' + sign + r.pct.toFixed(0) + "%</span>";
       card.appendChild(line);
     });
   }
@@ -200,7 +200,7 @@
       if (best) { top = best + " kg " + e.n.replace(/^Dumbbell\s/, ""); return true; }
       return false;
     });
-    return "last " + fmtDay(w.ts) + (top ? " · " + top : "");
+    return "last " + fmtDay(w.ts) + (top ? " \u00b7 " + top : "");
   }
   function openTemplate(id) {
     var routines = load("il_routines", []);
@@ -235,10 +235,10 @@
         star.setAttribute("data-act", "fav-tpl");
         star.setAttribute("data-id", id);
         star.className = "text-link";
-        star.style.cssText = "font-size:18px;line-height:1;min-height:0;padding:0 6px 0 0;color:" + (on ? "var(--accent)" : "#5a5a5a");
+        star.style.cssText = "font-size:18px;line-height:1;min-height:0;padding:0;width:28px;flex:0 0 28px;text-align:right;color:" + (on ? "var(--accent)" : "#5a5a5a");
         star.textContent = on ? "\u2605" : "\u2606";
         var row = card.querySelector(".row.space") || card;
-        row.insertBefore(star, row.firstChild);
+        row.appendChild(star);
       } else {
         var existing = card.querySelector("[data-act='fav-tpl']");
         existing.textContent = on ? "\u2605" : "\u2606";
@@ -247,6 +247,10 @@
       if (hasFavs && !editOn && !on) card.style.display = "none";
       else card.style.display = "";
       var nameEl = card.querySelector(".ex-name");
+      if (nameEl) {
+        nameEl.style.textAlign = "left";
+        nameEl.style.flex = "1";
+      }
       var name = nameEl ? nameEl.textContent : "";
       var routines = load("il_routines", []);
       var match = routines.filter(function (r) { return r.id === id || r.name === name; })[0];
@@ -260,44 +264,43 @@
     var headLab = view.querySelector(".sec-head .tiny");
     if (headLab) headLab.textContent = hasFavs && !editOn ? "Pinned" : "Templates";
   }
+  function scrub(view) {
+    Array.prototype.slice.call(view.querySelectorAll("button")).forEach(function (el) {
+      var t = (el.textContent || "").replace(/\s+/g, " ").trim();
+      if (/^repeat/i.test(t) || t === "Quick add from gear" || t === "Browse dumbbells and machines" || t === "Install app" || t === "Install on iPhone") el.remove();
+    });
+  }
   function polishHome() {
     var view = document.getElementById("view-home");
-    if (!view || !view.classList.contains("active") || lock) return;
+    if (!view) return;
+    view.classList.add("ready");
+    if (!view.classList.contains("active") || lock) return;
     if (!view.querySelector(".stats") && !view.querySelector(".card")) return;
     lock = true;
-    paintDash(view);
-    var unit = document.getElementById("unitBtn"); if (unit) unit.style.display = "none";
-    var instBtn = document.getElementById("installBtn"); if (instBtn) instBtn.style.display = "none";
-    var homeInst = document.getElementById("homeInstall"); if (homeInst) homeInst.remove();
-    var hint = view.querySelector("#iosHint"); if (hint) hint.style.display = "none";
-    var empty = view.querySelector("[data-act='start-fresh']");
-    if (empty) empty.style.display = "none";
-    var repeat = view.querySelector("[data-act='repeat-last']");
-    if (repeat) repeat.remove();
-    Array.prototype.slice.call(view.querySelectorAll("button, .tiny")).forEach(function (el) {
-      var t = (el.textContent || "").trim();
-      if (t === "Quick add from gear" || t === "Browse dumbbells and machines" || t === "Install app" || t === "Install on iPhone") el.style.display = "none";
-    });
-    var vol = view.querySelector("#volWeek");
-    if (vol && /No sets logged this week/i.test(vol.textContent)) vol.style.display = "none";
-    var editOn = !!load("il_tpl_edit", false);
-    Array.prototype.slice.call(view.querySelectorAll(".tiny")).forEach(function (lab) {
-      if ((lab.textContent || "").trim() !== "Templates" && (lab.textContent || "").trim() !== "Pinned") return;
-      if (lab.parentElement && lab.parentElement.classList.contains("sec-head")) return;
-      var head = document.createElement("div");
-      head.className = "row space sec-head";
-      head.style.margin = "8px 0";
-      head.innerHTML = '<div class="tiny">Templates</div><button class="text-link" type="button" data-act="toggle-tpl-edit">' + (editOn ? "Done" : "Edit") + "</button>";
-      lab.replaceWith(head);
-    });
-    bindTemplates(view);
-    paintFeed(view);
+    try {
+      paintDash(view);
+      scrub(view);
+      var vol = view.querySelector("#volWeek");
+      if (vol) vol.style.display = "none";
+      var editOn = !!load("il_tpl_edit", false);
+      Array.prototype.slice.call(view.querySelectorAll(".tiny")).forEach(function (lab) {
+        if ((lab.textContent || "").trim() !== "Templates" && (lab.textContent || "").trim() !== "Pinned") return;
+        if (lab.parentElement && lab.parentElement.classList.contains("sec-head")) return;
+        var head = document.createElement("div");
+        head.className = "row space sec-head";
+        head.style.margin = "8px 0";
+        head.innerHTML = '<div class="tiny">Templates</div><button class="text-link" type="button" data-act="toggle-tpl-edit">' + (editOn ? "Done" : "Edit") + "</button>";
+        lab.replaceWith(head);
+      });
+      bindTemplates(view);
+      paintFeed(view);
+    } catch (err) {}
     view.classList.add("ready");
-    setTimeout(function () { lock = false; }, 0);
+    setTimeout(function () { lock = false; }, 30);
   }
   function schedule() {
     if (timer) return;
-    timer = setTimeout(function () { timer = null; polishHome(); paintPrPct(); }, 50);
+    timer = setTimeout(function () { timer = null; polishHome(); paintPrPct(); }, 80);
   }
   function reloadHome() {
     var btn = document.querySelector('.nav button[data-view="home"]');
@@ -340,7 +343,10 @@
   }, true);
   function boot() {
     var n = document.getElementById("view-home");
-    if (n) new MutationObserver(schedule).observe(n, { childList: true });
+    if (n) {
+      n.classList.add("ready");
+      new MutationObserver(schedule).observe(n, { childList: true });
+    }
     var p = document.getElementById("view-progress");
     if (p) new MutationObserver(schedule).observe(p, { childList: true });
     polishHome();
