@@ -52,6 +52,18 @@
     });
     return best;
   }
+  function liveInfo() {
+    var s = load("il_session", null);
+    if (!s || !(s.exercises || []).length) return null;
+    var doneEx = 0, next = null;
+    (s.exercises || []).forEach(function (e, i) {
+      var sets = e.sets || [];
+      var done = sets.filter(function (x) { return x.done; }).length;
+      if (done === sets.length && sets.length) doneEx += 1;
+      else if (!next) next = { i: i, n: e.n, si: done, total: sets.length };
+    });
+    return { name: s.name || "Workout", doneEx: doneEx, total: s.exercises.length, next: next };
+  }
   function liftSeries() {
     var map = {};
     workouts().slice().sort(function (a, b) { return a.ts - b.ts; }).forEach(function (w) {
@@ -101,10 +113,24 @@
       '<circle cx="' + lx.toFixed(1) + '" cy="' + ly.toFixed(1) + '" r="3.2" fill="#FFD400" /></svg>' +
       '<div class="row space"><span class="tiny">' + fmtDay(pts[0].ts) + '</span><span class="tiny">' + pts.length + ' sessions \u00b7 ' + fmtDay(last.ts) + '</span></div>';
   }
+  function resumeLive() {
+    var info = liveInfo();
+    var train = document.querySelector('.nav button[data-view="workout"]');
+    if (train) train.click();
+    setTimeout(function () {
+      if (!info || !info.next) return;
+      var row = document.querySelector('#view-workout [data-act="set-w"][data-i="' + info.next.i + '"][data-si="' + info.next.si + '"]');
+      if (!row) row = document.querySelector('#view-workout [data-act="set-w"][data-i="' + info.next.i + '"]');
+      if (row && row.closest) {
+        var card = row.closest(".card");
+        if (card) card.scrollIntoView({ block: "center" });
+        try { row.focus(); } catch (e) {}
+      }
+    }, 120);
+  }
   function paintAction(view) {
     var last = workouts()[0];
-    var session = load("il_session", null);
-    var live = session && session.exercises && session.exercises.length;
+    var live = liveInfo();
     var bar = view.querySelector("#startWork");
     if (!bar) {
       bar = document.createElement("button");
@@ -113,18 +139,30 @@
       bar.className = "btn";
       bar.style.cssText = "margin:4px 0 12px;min-height:52px;font-size:17px";
       view.insertBefore(bar, view.firstChild);
-    } else if (view.firstChild !== bar) {
+    } else if (view.firstChild !== bar && !view.querySelector("#liveWork")) {
       view.insertBefore(bar, view.firstChild);
     }
     bar.textContent = live ? "Resume workout" : "Start workout";
-    bar.setAttribute("data-act", live ? "go-workout" : "start-home");
+    bar.setAttribute("data-act", live ? "resume-live" : "start-home");
 
-    var lastLine = last ? (last.name || "Workout") + " \u00b7 " + lastAgo(last.ts) : "No sessions yet";
+    var liveEl = view.querySelector("#liveWork");
+    if (live) {
+      if (!liveEl) {
+        liveEl = document.createElement("button");
+        liveEl.type = "button";
+        liveEl.id = "liveWork";
+        liveEl.className = "card";
+        liveEl.style.cssText = "width:100%;text-align:left;border-color:#2a2610;background:#19160a";
+        bar.insertAdjacentElement("afterend", liveEl);
+      }
+      var nextLine = live.next ? shortName(live.next.n) + " \u00b7 set " + (live.next.si + 1) : "All sets ticked";
+      liveEl.setAttribute("data-act", "resume-live");
+      liveEl.innerHTML = '<div class="tiny">Workout in progress</div><div class="ex-name" style="margin-top:4px">' +
+        live.doneEx + " exercises completed</div><div class="tiny" style="margin-top:4px">" + esc(nextLine) + " \u00b7 " + live.total + " moves</div>";
+    } else if (liveEl) liveEl.remove();
+
     var n = weekStreak();
-    var streakLine = n ? n + " week streak" : "No streak yet";
     var pr = latestPr();
-    var prLine = pr ? shortName(pr.n) + " \u00b7 " + pr.w + " kg" + (pr.r ? " \u00d7 " + pr.r : "") : "No PRs yet";
-
     var box = view.querySelector(".stats");
     if (box) {
       box.setAttribute("data-dash", "1");
@@ -140,6 +178,9 @@
       if (box && box.nextSibling) view.insertBefore(snap, box.nextSibling);
       else bar.insertAdjacentElement("afterend", snap);
     }
+    var lastLine = last ? (last.name || "Workout") + " \u00b7 " + lastAgo(last.ts) : "No sessions yet";
+    var streakLine = n ? n + " week streak" : "No streak yet";
+    var prLine = pr ? shortName(pr.n) + " \u00b7 " + pr.w + " kg" + (pr.r ? " \u00d7 " + pr.r : "") : "No PRs yet";
     snap.innerHTML =
       '<div class="card"><div class="tiny">Last workout</div><div class="ex-name" style="margin-top:4px">' + esc(last ? (last.name || "Workout") : "None yet") + '</div><div class="tiny" style="margin-top:4px">' + esc(lastLine) + '</div></div>' +
       '<div class="card"><div class="tiny">Current streak</div><div class="ex-name" style="margin-top:4px">' + esc(streakLine) + '</div><div class="tiny" style="margin-top:4px">' + workouts().length + ' sessions logged</div></div>' +
@@ -175,7 +216,7 @@
     liftDeltas().forEach(function (r) { map[r.n] = r; });
     var series = liftSeries();
     Array.prototype.slice.call(view.querySelectorAll(".card")).forEach(function (card) {
-      if (card.classList.contains("chart-card")) return;
+      if (card.classList.contains("chart-card") || card.id === "chartBox") return;
       var nameEl = card.querySelector(".ex-name");
       if (!nameEl) return;
       var name = nameEl.textContent.trim();
@@ -232,12 +273,8 @@
     if (sheet && modal) { sheet.innerHTML = html; modal.classList.add("show"); }
   }
   function startFromHome() {
-    var session = load("il_session", null);
-    if (session && session.exercises && session.exercises.length) {
-      var train = document.querySelector('.nav button[data-view="workout"]');
-      if (train) train.click();
-      return;
-    }
+    var live = liveInfo();
+    if (live) { resumeLive(); return; }
     var routines = load("il_routines", []);
     var pinned = favs();
     var pick = routines.filter(function (r) { return pinned.indexOf(r.id) !== -1; })[0] || routines[0];
@@ -301,7 +338,7 @@
   }
   function scrub(view) {
     Array.prototype.slice.call(view.querySelectorAll("button")).forEach(function (el) {
-      if (el.id === "startWork") return;
+      if (el.id === "startWork" || el.id === "liveWork") return;
       var t = (el.textContent || "").replace(/\s+/g, " ").trim();
       if (/^repeat/i.test(t) || t === "Quick add from gear" || t === "Browse dumbbells and machines" || t === "Install app" || t === "Install on iPhone" || t === "Start empty workout") el.remove();
     });
@@ -343,6 +380,12 @@
     if (btn) btn.click();
   }
   document.addEventListener("click", function (e) {
+    if (e.target.closest("[data-act='resume-live'], #liveWork")) {
+      e.preventDefault();
+      e.stopPropagation();
+      resumeLive();
+      return;
+    }
     if (e.target.closest("[data-act='start-home'], #startWork")) {
       e.preventDefault();
       e.stopPropagation();
