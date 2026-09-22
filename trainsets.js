@@ -1,5 +1,5 @@
 (function () {
-  var restUntil = 0, restTick = null, sessTick = null, pressTimer = null, restChip = null;
+  var sessTick = null, pressTimer = null;
   function load(k, fb) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } }
   function loadSess() { return load("il_session", null); }
   function saveSess(s) { localStorage.setItem("il_session", JSON.stringify(s)); }
@@ -64,6 +64,15 @@
     var ov = document.getElementById("timer");
     if (ov) ov.classList.remove("show");
   }
+  function clockState() {
+    try { return JSON.parse(localStorage.getItem("il_clock") || "{}"); } catch (e) { return {}; }
+  }
+  function sessionElapsed() {
+    var c = clockState();
+    if (!c.startedAt) return 0;
+    var freeze = c.pausedAt ? Date.now() - Number(c.pausedAt) : 0;
+    return Math.max(0, Math.floor((Date.now() - c.startedAt - (Number(c.pauseMs) || 0) - freeze) / 1000));
+  }
   function sessionStats() {
     var s = loadSess() || { exercises: [], ts: Date.now() };
     var done = 0, total = 0, vol = 0;
@@ -73,8 +82,7 @@
         if (x.done) { done += 1; vol += (Number(x.w) || 0) * (Number(x.r) || 0); }
       });
     });
-    var elapsed = Math.max(0, Math.floor((Date.now() - (s.ts || Date.now())) / 1000));
-    return { done: done, total: total, vol: Math.round(vol), elapsed: elapsed };
+    return { done: done, total: total, vol: Math.round(vol), elapsed: sessionElapsed() };
   }
   function paintStrip(view) {
     var st = sessionStats();
@@ -87,7 +95,8 @@
       view.insertBefore(el, view.firstChild);
     }
     var spans = el.querySelectorAll("span");
-    if (spans[0]) spans[0].textContent = fmtClock(st.elapsed);
+    var c = clockState();
+    if (spans[0]) spans[0].textContent = c.startedAt ? fmtClock(st.elapsed) + (c.pausedAt ? " paused" : "") : "0:00";
     if (spans[1]) spans[1].textContent = st.done + "/" + st.total + " sets";
     if (spans[2]) spans[2].textContent = (st.vol >= 1000 ? (st.vol / 1000).toFixed(1) + "k" : st.vol) + " kg";
   }
