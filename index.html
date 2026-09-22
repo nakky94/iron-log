@@ -24,11 +24,11 @@
     #dateLabel,#unitBtn,#installBtn,#homeInstall,[data-act='repeat-last'],#view-home [data-act='start-fresh']{display:none !important}
     .view{display:none;padding:8px 16px calc(var(--nav-h) + var(--safe-b) + 20px)}
     .view.active{display:block}
-    .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:520px;display:grid;grid-template-columns:repeat(5,1fr);background:#0a0a0a;border-top:1px solid #161616;padding:6px 8px calc(8px + var(--safe-b));z-index:30}
-    .nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-size:10px;font-weight:600;min-height:44px}
+    .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:520px;display:grid;grid-template-columns:repeat(5,1fr);background:#0a0a0a;border-top:1px solid #161616;padding:6px 6px calc(8px + var(--safe-b));z-index:30;gap:4px}
+    .nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#6e6e6e;font-size:10px;font-weight:600;min-height:48px;border-radius:16px;padding:6px 2px;position:relative}
     .nav button span{display:block;margin-top:2px}
-    .nav button.active{color:var(--text)}
-    .nav button.active svg{color:var(--accent)}
+    .nav button.active{color:#111;background:#FFD400;font-weight:800}
+    .nav button.active svg{color:#111;fill:#111;stroke:#111}
     .nav svg{width:20px;height:20px}
     .card{background:var(--card);border:1px solid #1e1e1e;border-radius:var(--radius);padding:14px;margin-bottom:10px;text-align:left;position:relative}
     .row{display:flex;gap:8px;align-items:center}
@@ -114,5 +114,6 @@
   <script src="charts.js" defer></script>
   <script src="gear.js" defer></script>
   <script src="timers.js" defer></script>
+  <script src="nav.js" defer></script>
 </body>
 </html>
