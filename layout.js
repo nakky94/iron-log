@@ -19,6 +19,7 @@
       ".stat .tiny{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;color:#7a7a7a}",
       ".stat-accent{background:#19160a;border-color:#2a2610}",
       ".chip{background:#161616;border:1px solid #222;min-height:36px;padding:7px 12px}",
+      "#view-home #backupNag,#view-home .backup-banner{display:none!important}",
       "#view-library .card .btn{float:none;width:auto!important;min-width:64px;padding:8px 14px;min-height:36px;border-radius:12px}",
       "#view-history .card .btn{float:none!important;max-width:none!important}",
       "#view-history .log-acts{display:flex;gap:6px;margin-top:10px}",
@@ -46,9 +47,23 @@
     });
     Array.prototype.slice.call(view.querySelectorAll(".stat .tiny")).forEach(function (el) {
       var t = (el.textContent || "").trim().toLowerCase();
-      if (t === "last session") el.textContent = "Last";
-      if (t === "week volume") el.textContent = "Volume";
-      if (t === "lift progress") el.textContent = "Lifts";
+      if (t.indexOf("last") === 0) el.textContent = "Last";
+      if (t.indexOf("week") === 0 || t.indexOf("volume") >= 0) el.textContent = "Volume";
+      if (t.indexOf("lift") === 0) el.textContent = "Lifts";
+    });
+    Array.prototype.slice.call(view.querySelectorAll("div")).forEach(function (el) {
+      if (el.children.length > 4) return;
+      var t = (el.textContent || "").replace(/\s+/g, " ").trim();
+      if (/^backup due/i.test(t) || el.id === "backupNag") el.style.display = "none";
+    });
+    var nag = document.getElementById("backupNag");
+    if (nag && nag.closest("#view-home")) nag.style.display = "none";
+    Array.prototype.slice.call(view.querySelectorAll("#homeFeed .row, #homeFeed .tiny")).forEach(function (el) {
+      var t = (el.textContent || "").trim();
+      if (/^session volume/i.test(t)) {
+        var row = el.closest(".row") || el.parentNode;
+        if (row && row !== view) row.style.display = "none";
+      }
     });
   }
   function tidyLog() {
