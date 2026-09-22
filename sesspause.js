@@ -5,19 +5,13 @@
   function clock() {
     try { return JSON.parse(localStorage.getItem("il_clock") || "{}"); } catch (e) { return {}; }
   }
-  function saveClock(c) {
-    localStorage.setItem("il_clock", JSON.stringify(c));
-    window.__sessPaused = !c.startedAt || !!c.pausedAt;
-  }
+  function saveClock(c) { localStorage.setItem("il_clock", JSON.stringify(c)); }
   function bindClock(s) {
     var c = clock();
-    if (!s) return c;
-    if (!c.sessTs) c.sessTs = s.ts;
-    if (c.sessTs !== s.ts && !c.startedAt) {
+    if (!s) return { startedAt: 0, pauseMs: 0, pausedAt: 0, sessTs: 0 };
+    if (c.sessTs !== s.ts) {
       c = { sessTs: s.ts, startedAt: 0, pauseMs: 0, pausedAt: 0 };
       saveClock(c);
-    } else {
-      c.sessTs = s.ts;
     }
     return c;
   }
@@ -36,8 +30,12 @@
     if (document.getElementById("sessBarStyle")) return;
     var s = document.createElement("style");
     s.id = "sessBarStyle";
-    s.textContent = ".sess-bar{position:sticky;top:calc(28px + var(--safe-t));z-index:10;background:#1d1a0a;border-radius:14px;padding:8px;margin:0 0 10px;display:flex;gap:8px;align-items:center}.sess-bar .btn{width:100%;min-height:48px}.sess-bar .clock{color:#FFD400;font-size:22px;font-weight:800;min-width:5ch;font-variant-numeric:tabular-nums}.sess-bar .ghost{background:#2a2610;color:#FFD400;border-radius:12px;padding:10px 14px;font-weight:800;min-height:44px;flex:1}";
+    s.textContent = ".sess-bar{margin:12px 0 8px;background:#1d1a0a;border-radius:14px;padding:8px;display:flex;gap:8px;align-items:center}.sess-bar .btn{width:100%;min-height:48px}.sess-bar .clock{color:#FFD400;font-size:22px;font-weight:800;min-width:5ch;font-variant-numeric:tabular-nums}.sess-bar .ghost{background:#2a2610;color:#FFD400;border-radius:12px;padding:10px 14px;font-weight:800;min-height:44px;flex:1}.sess-bar .hint{width:100%;text-align:center;color:#9a9a9a;font-size:12px;padding:8px}";
     document.head.appendChild(s);
+  }
+  function freezeStrip(view, text) {
+    var strip = view.querySelector("#sessStrip span");
+    if (strip) strip.textContent = text;
   }
   function barEl(view) {
     styles();
@@ -46,7 +44,7 @@
       bar = document.createElement("div");
       bar.id = "sessBar";
       bar.className = "sess-bar";
-      view.insertBefore(bar, view.firstChild);
+      view.appendChild(bar);
     }
     return bar;
   }
@@ -62,18 +60,17 @@
     var c = bindClock(s);
     var bar = barEl(view);
     if (!c.startedAt) {
-      bar.innerHTML = '<button type="button" class="btn" data-act="sess-start">Start session</button>';
-      var strip = view.querySelector("#sessStrip span");
-      if (strip) strip.textContent = "0:00";
+      bar.innerHTML = '<button type="button" class="btn" data-act="sess-start">Hold to start session</button>';
+      freezeStrip(view, "0:00");
       return;
     }
     if (c.pausedAt) {
       bar.innerHTML = '<span class="clock">' + fmt(elapsed(c)) + '</span><button type="button" class="ghost" data-act="sess-resume">Resume session</button>';
+      freezeStrip(view, fmt(elapsed(c)) + " paused");
     } else {
       bar.innerHTML = '<span class="clock">' + fmt(elapsed(c)) + '</span><button type="button" class="ghost" data-act="sess-pause">Pause session</button>';
+      freezeStrip(view, fmt(elapsed(c)));
     }
-    var clockEl = view.querySelector("#sessStrip span");
-    if (clockEl) clockEl.textContent = fmt(elapsed(c)) + (c.pausedAt ? " paused" : "");
   }
   function start() {
     var s = sess(); if (!s) return;
@@ -101,15 +98,28 @@
     saveClock(c);
     paint();
   }
+  var hold = null;
+  document.addEventListener("pointerdown", function (e) {
+    var btn = e.target.closest("[data-act='sess-start']");
+    if (!btn) return;
+    e.preventDefault();
+    btn.textContent = "Keep holding…";
+    hold = setTimeout(function () { hold = null; start(); }, 650);
+  }, true);
+  function cancelHold() {
+    if (!hold) return;
+    clearTimeout(hold); hold = null;
+    var btn = document.querySelector("[data-act='sess-start']");
+    if (btn) btn.textContent = "Hold to start session";
+  }
+  document.addEventListener("pointerup", cancelHold, true);
+  document.addEventListener("pointercancel", cancelHold, true);
   document.addEventListener("click", function (e) {
-    if (e.target.closest("[data-act='sess-start']")) { e.preventDefault(); e.stopPropagation(); start(); return; }
+    if (e.target.closest("[data-act='sess-start']")) { e.preventDefault(); e.stopPropagation(); return; }
     if (e.target.closest("[data-act='sess-pause']")) { e.preventDefault(); e.stopPropagation(); pause(); return; }
     if (e.target.closest("[data-act='sess-resume']")) { e.preventDefault(); e.stopPropagation(); resume(); return; }
   }, true);
-  setInterval(paint, 400);
-  document.addEventListener("click", function (e) {
-    if (e.target.closest('.nav button[data-view="workout"]')) setTimeout(paint, 80);
-  });
+  setInterval(paint, 250);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", paint);
   else paint();
 })();
