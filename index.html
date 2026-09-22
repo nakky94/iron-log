@@ -50,15 +50,9 @@
     .step-wrap{display:flex;align-items:center;gap:3px;min-width:0}
     .step-wrap input{flex:1;min-width:0}
     .step{width:44px;height:44px;border-radius:10px;background:#1c1c1c;font-weight:800}
-    .rir-row{display:flex;gap:6px;margin-top:10px;align-items:center}
-    .rir{width:36px;height:36px;border-radius:10px;background:#1c1c1c;color:var(--muted);font-weight:700}
-    .rir.on{background:var(--accent);color:#111}
     .ghost-set{display:none}
     .timer-overlay{display:none !important}
     .sess-strip{display:flex;flex-wrap:wrap;justify-content:space-between;padding:6px 2px 10px;color:var(--muted);font-size:12px;font-weight:600;position:sticky;top:calc(44px + var(--safe-t));background:var(--bg);z-index:8}
-    .rest-chip{margin-top:10px;width:100%;background:#1d1a0a;color:var(--accent);border-radius:12px;padding:10px;font-weight:700;min-height:48px}
-    .bar{height:5px;background:#232323;border-radius:99px;overflow:hidden;margin-top:6px}
-    .bar>i{display:block;height:100%;background:var(--accent)}
     .text-link{color:var(--text);font-size:13px;font-weight:600}
     .modal-bg{display:none;position:fixed;inset:0;background:#000a;z-index:40;align-items:flex-end;justify-content:center}
     .modal-bg.show{display:flex}
@@ -71,7 +65,6 @@
     .stat-accent b{color:var(--accent)}
     .set-grid [data-act='toggle-set']{width:44px;height:44px;border-radius:12px;font-weight:800;background:#1c1c1c;border:1px solid #333}
     .set-grid [data-act='toggle-set']:not(.ghost){background:var(--accent);color:#111;border-color:var(--accent)}
-    .heat{display:flex;gap:6px;overflow-x:auto;margin:0 0 10px}
     #prToast{position:fixed;left:50%;bottom:calc(var(--nav-h) + var(--safe-b) + 16px);transform:translateX(-50%);background:var(--accent);color:#111;font-weight:800;padding:12px 16px;border-radius:14px;opacity:0;pointer-events:none;z-index:60}
     #prToast.show{opacity:1}
   </style>
@@ -116,5 +109,6 @@
   <script src="layout.js" defer></script>
   <script src="pro.js" defer></script>
   <script src="mobile.js" defer></script>
+  <script src="history.js" defer></script>
 </body>
 </html>
