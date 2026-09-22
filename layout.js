@@ -1,35 +1,66 @@
 (function () {
+  function styles() {
+    if (document.getElementById("layoutFixStyle")) return;
+    var s = document.createElement("style");
+    s.id = "layoutFixStyle";
+    s.textContent =
+      "#view-history .card{overflow:hidden}" +
+      "#view-history .card .ex-name{display:block;width:100%;padding-right:0}" +
+      "#view-history .log-acts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}" +
+      "#view-history .log-acts .btn{float:none!important;width:100%!important;max-width:none!important;min-width:0;padding:8px 4px;min-height:40px;font-size:13px}" +
+      "#view-history .card > .btn{float:none!important}" +
+      "#view-library .card .btn{float:none;width:auto!important;max-width:none;min-width:64px;padding:8px 12px}" +
+      "#view-history .card .row.space{align-items:flex-start}";
+    document.head.appendChild(s);
+  }
   function hideJunk(view) {
     if (!view) return;
     Array.prototype.slice.call(view.querySelectorAll("button, .tiny, .btn")).forEach(function (el) {
       var t = (el.textContent || "").replace(/\s+/g, " ").trim();
       if (/^start empty/i.test(t) || /^quick add/i.test(t) || /^browse dumbbell/i.test(t) || /^repeat /i.test(t)) {
         el.style.display = "none";
-        if (el.parentNode && el.parentNode !== view && el.parentNode.childElementCount === 1) el.parentNode.style.display = "none";
       }
     });
   }
-  function compact(view) {
+  function tidyLog() {
+    var view = document.getElementById("view-history");
     if (!view) return;
-    Array.prototype.slice.call(view.querySelectorAll(".card .btn, .card button.btn")).forEach(function (b) {
+    Array.prototype.slice.call(view.querySelectorAll(".card")).forEach(function (card) {
+      if (card.querySelector(".log-acts")) return;
+      var btns = Array.prototype.slice.call(card.querySelectorAll(":scope > .btn, :scope > .row .btn, :scope > button.btn"));
+      if (!btns.length) {
+        btns = Array.prototype.slice.call(card.querySelectorAll(".btn"));
+      }
+      if (!btns.length) return;
+      var row = document.createElement("div");
+      row.className = "log-acts";
+      btns.forEach(function (b) {
+        b.style.float = "none";
+        b.style.width = "100%";
+        row.appendChild(b);
+      });
+      card.appendChild(row);
+    });
+  }
+  function compactGear() {
+    var view = document.getElementById("view-library");
+    if (!view) return;
+    Array.prototype.slice.call(view.querySelectorAll(".card .btn")).forEach(function (b) {
       b.style.width = "auto";
-      b.style.minWidth = "72px";
-      b.style.padding = "8px 12px";
-      b.style.minHeight = "40px";
-      b.style.flex = "0 0 auto";
-      b.style.position = "relative";
-      b.style.zIndex = "1";
+      b.style.float = "none";
+      b.style.minWidth = "64px";
     });
   }
   function run() {
+    styles();
     hideJunk(document.getElementById("view-home"));
-    compact(document.getElementById("view-library"));
-    compact(document.getElementById("view-history"));
+    compactGear();
+    tidyLog();
   }
   var t = null;
   function schedule() {
     if (t) return;
-    t = setTimeout(function () { t = null; run(); }, 50);
+    t = setTimeout(function () { t = null; run(); }, 60);
   }
   function boot() {
     ["view-home", "view-library", "view-history"].forEach(function (id) {
