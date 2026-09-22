@@ -1,4 +1,4 @@
-const CACHE = "gym-log-v43";
+const CACHE = "gym-log-v44";
 const ASSETS = ["/", "/index.html", "/perf.js", "/app.js", "/suggest.js", "/extra.js", "/more.js", "/cues.js", "/backup.js", "/homeui.js", "/trainsets.js", "/restfix.js", "/volume.js", "/plus.js", "/parse.worker.js", "/manifest.webmanifest", "/icon.svg"];
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
