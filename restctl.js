@@ -11,9 +11,17 @@
   }
   function left() { return Math.max(0, Math.ceil((until - Date.now()) / 1000)); }
   function stopTick() { clearInterval(tick); tick = null; }
+  function styles() {
+    if (document.getElementById("restBarStyle")) return;
+    var s = document.createElement("style");
+    s.id = "restBarStyle";
+    s.textContent = ".rest-bar{position:sticky;top:calc(28px + var(--safe-t));z-index:9;background:#1d1a0a;border-radius:14px;padding:8px;margin:0 0 10px;display:flex;gap:8px;align-items:center}.rest-bar .btn{width:100%;min-height:44px}.rest-bar button{background:#2a2610;color:#FFD400;border-radius:10px;padding:8px 12px;font-weight:700;min-height:40px}.rest-bar .rest-num{color:#FFD400;font-size:22px;font-weight:800;min-width:4.5ch;font-variant-numeric:tabular-nums}.rest-bar.warn{background:#2a1610}";
+    document.head.appendChild(s);
+  }
   function mount() {
     var view = document.getElementById("view-workout");
     if (!view || !view.classList.contains("active")) return;
+    styles();
     bar = document.getElementById("restBar");
     if (!bar) {
       bar = document.createElement("div");
@@ -33,14 +41,14 @@
     var n = paused ? hold : left();
     if (!paused && n <= 0) {
       stopTick(); until = 0; paused = false;
-      bar.innerHTML = '<button type="button" class="btn" data-act="arm-rest">Go · start rest</button>';
+      bar.innerHTML = '<button type="button" class="btn" data-act="arm-rest">Go \u00b7 start rest</button>';
       if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
       return;
     }
     bar.classList.toggle("warn", !paused && n <= 10);
     bar.innerHTML =
-      '<span class="rest-num">' + fmt(n) + '</span>' +
-      '<button type="button" data-act="pause-rest">' + (paused ? "Resume" : "Pause") + '</button>' +
+      '<span class="rest-num">' + fmt(n) + "</span>" +
+      '<button type="button" data-act="pause-rest">' + (paused ? "Resume" : "Pause") + "</button>" +
       '<button type="button" data-act="skip-rest">Skip</button>';
   }
   function start() {
