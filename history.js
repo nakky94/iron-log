@@ -2,6 +2,7 @@
   var range = "all";
   var openId = null;
   function load(k, fb) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } }
+  function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
   function workouts() { return load("il_workouts", []); }
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
@@ -50,23 +51,80 @@
       "#histList .h-card{cursor:pointer}" +
       "#histList .h-meta{display:flex;gap:12px;margin-top:8px;color:#8d8d8d;font-size:12px}" +
       "#histList .h-body{margin-top:10px;border-top:1px solid #222;padding-top:10px}" +
+      "#histList .h-edit{width:64px;min-height:36px;padding:6px;text-align:center;font-size:15px;font-weight:700}" +
       "#histFilters{display:flex;gap:6px;overflow-x:auto;margin:0 0 10px}" +
+      "#undoBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + var(--safe-b) + 12px);background:#FFD400;color:#111;font-weight:800;padding:12px 16px;border-radius:14px;z-index:70;display:none}" +
+      "#undoBar.on{display:block}" +
       "#view-history [data-act='import-seed']{display:none!important}";
   }
   function detailHtml(w) {
     var html = "";
-    (w.exercises || []).forEach(function (e) {
+    (w.exercises || []).forEach(function (e, ei) {
       var ev = 0;
       (e.sets || []).forEach(function (s) { ev += (Number(s.w) || 0) * (Number(s.r) || 0); });
       html += '<div style="margin-top:10px"><div class="row space"><div class="ex-name" style="font-size:15px">' + esc(shortName(e.n)) + '</div><div class="tiny">' + fmtVol(Math.round(ev)) + "</div></div>";
       (e.sets || []).forEach(function (s, i) {
         if (!s.done && !s.w && !s.r) return;
-        html += '<div class="row space" style="margin-top:4px"><div class="tiny">Set ' + (i + 1) + '</div><div>' + (s.w || "\u2014") + " kg \u00d7 " + (s.r || "\u2014") + "</div></div>";
+        html += '<div class="row space" style="margin-top:6px"><div class="tiny">Set ' + (i + 1) + '</div>' +
+          '<input class="h-edit" inputmode="decimal" data-edit-w data-hid="' + esc(w.id) + '" data-ei="' + ei + '" data-si="' + i + '" value="' + esc(s.w || "") + '" />' +
+          '<span class="tiny">kg</span>' +
+          '<input class="h-edit" inputmode="numeric" data-edit-r data-hid="' + esc(w.id) + '" data-ei="' + ei + '" data-si="' + i + '" value="' + esc(s.r || "") + '" />' +
+          '<span class="tiny">reps</span></div>';
       });
       html += "</div>";
     });
-    html += '<button class="btn ghost warn" type="button" data-act="del-work" data-id="' + esc(w.id) + '" style="margin-top:12px">Delete session</button>';
+    html += '<button class="btn" type="button" data-act="save-hist" data-id="' + esc(w.id) + '" style="margin-top:12px">Save changes</button>';
+    html += '<button class="btn ghost warn" type="button" data-act="del-hist" data-id="' + esc(w.id) + '" style="margin-top:8px">Delete session</button>';
     return html;
+  }
+  function toastUndo() {
+    var bar = document.getElementById("undoBar");
+    if (!bar) {
+      bar = document.createElement("button");
+      bar.id = "undoBar";
+      bar.type = "button";
+      bar.textContent = "Session deleted \u00b7 Undo";
+      document.body.appendChild(bar);
+    }
+    bar.classList.add("on");
+    clearTimeout(bar._t);
+    bar._t = setTimeout(function () { bar.classList.remove("on"); }, 6000);
+  }
+  function saveEdits(id) {
+    var ws = workouts();
+    var w = ws.filter(function (x) { return x.id === id; })[0];
+    if (!w) return;
+    Array.prototype.slice.call(document.querySelectorAll('[data-edit-w][data-hid="' + id + '"]')).forEach(function (inp) {
+      var ei = Number(inp.getAttribute("data-ei")), si = Number(inp.getAttribute("data-si"));
+      if (w.exercises[ei] && w.exercises[ei].sets[si]) w.exercises[ei].sets[si].w = inp.value;
+    });
+    Array.prototype.slice.call(document.querySelectorAll('[data-edit-r][data-hid="' + id + '"]')).forEach(function (inp) {
+      var ei = Number(inp.getAttribute("data-ei")), si = Number(inp.getAttribute("data-si"));
+      if (w.exercises[ei] && w.exercises[ei].sets[si]) w.exercises[ei].sets[si].r = inp.value;
+    });
+    save("il_workouts", ws);
+    paint();
+  }
+  function delWork(id) {
+    var ws = workouts();
+    var w = ws.filter(function (x) { return x.id === id; })[0];
+    if (!w) return;
+    save("il_undo_work", w);
+    save("il_workouts", ws.filter(function (x) { return x.id !== id; }));
+    if (openId === id) openId = null;
+    toastUndo();
+    paint();
+  }
+  function undoDel() {
+    var w = load("il_undo_work", null);
+    if (!w) return;
+    var ws = workouts();
+    ws.unshift(w);
+    save("il_workouts", ws);
+    localStorage.removeItem("il_undo_work");
+    var bar = document.getElementById("undoBar");
+    if (bar) bar.classList.remove("on");
+    paint();
   }
   function paint() {
     var view = document.getElementById("view-history");
@@ -119,19 +177,19 @@
     list.innerHTML = html;
   }
   document.addEventListener("click", function (e) {
+    if (e.target.id === "undoBar") { undoDel(); return; }
     var chip = e.target.closest("[data-hist-range]");
-    if (chip) {
-      range = chip.getAttribute("data-hist-range");
-      paint();
-      return;
-    }
+    if (chip) { range = chip.getAttribute("data-hist-range"); paint(); return; }
+    var saveBtn = e.target.closest("[data-act='save-hist']");
+    if (saveBtn) { e.preventDefault(); e.stopPropagation(); saveEdits(saveBtn.getAttribute("data-id")); return; }
+    var del = e.target.closest("[data-act='del-hist'], #histList [data-act='del-work']");
+    if (del) { e.preventDefault(); e.stopPropagation(); delWork(del.getAttribute("data-id")); return; }
     var card = e.target.closest("#histList .h-card");
-    if (card && !e.target.closest("[data-act]")) {
+    if (card && !e.target.closest("input, button, [data-act]")) {
       var id = card.getAttribute("data-hid");
       openId = openId === id ? null : id;
       paint();
     }
-    if (e.target.closest("[data-act='del-work']")) setTimeout(paint, 200);
   }, true);
   var t = null;
   function boot() {
