@@ -185,23 +185,44 @@
     if (s.length < 2) s = "0" + s;
     return m + ":" + s;
   }
+  function volOf(w) {
+    var n = 0;
+    (w.exercises || []).forEach(function (e) {
+      (e.sets || []).forEach(function (s) { n += (Number(s.w) || 0) * (Number(s.r) || 0); });
+    });
+    return Math.round(n);
+  }
   function summaryFrom(w) {
-    var sets = 0, vol = 0, prs = 0;
+    var sets = 0, vol = 0, prs = 0, moves = 0;
     var bests = load("il_prs", {});
     (w.exercises || []).forEach(function (e) {
+      var hit = false;
       (e.sets || []).forEach(function (s) {
-        if (!s.done) return;
+        if (!s.done && !s.w) return;
+        hit = true;
         sets += 1;
         vol += (Number(s.w) || 0) * (Number(s.r) || 0);
         var prev = bests[e.n] && Number(bests[e.n].w);
         if (prev && Number(s.w) > prev) prs += 1;
       });
+      if (hit) moves += 1;
     });
     var c = clock();
     var dur = 0;
     if (c.startedAt) dur = Math.max(0, Date.now() - c.startedAt - (c.pauseMs || 0) - (c.pausedAt ? Date.now() - c.pausedAt : 0));
     else if (w.durationSec) dur = w.durationSec * 1000;
-    return { sets: sets, vol: Math.round(vol), prs: prs, dur: Math.round(dur / 1000), name: w.name || "Workout" };
+    var name = w.name || "Workout";
+    var prev = workouts().filter(function (x) { return x.id !== w.id && (x.name || "Workout") === name; })[0] || workouts().filter(function (x) { return x.id !== w.id; })[0];
+    var cmp = "";
+    if (prev) {
+      var pv = volOf(prev);
+      if (pv) {
+        var pct = Math.round((vol - pv) / pv * 100);
+        var sign = pct >= 0 ? pct + "% more" : Math.abs(pct) + "% less";
+        cmp = sign + " volume than your previous " + name + " workout.";
+      }
+    }
+    return { sets: sets, vol: Math.round(vol), prs: prs, moves: moves, dur: Math.round(dur / 1000), name: name, cmp: cmp };
   }
   function showFinish(w) {
     var sm = summaryFrom(w);
@@ -212,11 +233,16 @@
       '<div class="tiny" style="margin-top:4px">' + sm.name + "</div>" +
       '<div class="finish-stats">' +
       "<div><b>" + fmtClock(sm.dur) + "</b><span class=\"tiny\">Duration</span></div>" +
+      "<div><b>" + sm.moves + "</b><span class=\"tiny\">Lifts</span></div>" +
       "<div><b>" + sm.sets + "</b><span class=\"tiny\">Sets</span></div>" +
-      "<div><b>" + (sm.vol >= 1000 ? (sm.vol / 1000).toFixed(1) + "k" : sm.vol) + "</b><span class=\"tiny\">Volume kg</span></div>" +
       "</div>" +
-      (sm.prs ? '<div class="tiny">' + sm.prs + " new best" + (sm.prs > 1 ? "s" : "") + "</div>" : "") +
-      '<button class="btn" type="button" data-act="close-sheet" style="margin-top:12px">Done</button>';
+      '<div class="finish-stats">' +
+      "<div><b>" + (sm.vol >= 1000 ? (sm.vol / 1000).toFixed(1) + "k" : sm.vol) + "</b><span class=\"tiny\">Volume kg</span></div>" +
+      "<div><b>" + sm.prs + "</b><span class=\"tiny\">PRs</span></div>" +
+      "<div><b>" + weekStreak() + "</b><span class=\"tiny\">Streak wk</span></div>" +
+      "</div>" +
+      (sm.cmp ? '<div style="margin:4px 0 8px;font-weight:700">' + sm.cmp + "</div>" : "") +
+      '<button class="btn" type="button" data-act="close-sheet" style="margin-top:8px">Done</button>';
     modal.classList.add("show");
   }
   document.addEventListener("click", function (e) {
