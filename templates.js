@@ -1,4 +1,9 @@
 (function () {
+  if (!document.querySelector('script[src="sessiontimer.js"]')) {
+    var s = document.createElement("script");
+    s.src = "sessiontimer.js";
+    document.body.appendChild(s);
+  }
   function load(k, fb) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } }
   function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
   function routines() { return load("il_routines", []); }
