@@ -1,36 +1,143 @@
 (function () {
-  function css() {
-    var s = document.getElementById("trainFix");
-    if (!s) { s = document.createElement("style"); s.id = "trainFix"; document.head.appendChild(s); }
-    s.textContent = [
-      "#trainDock,#continueBox,#restBar,#sessStrip,.rir-row,.step,.step-wrap button,.wu-chip,.move-acts,.ghost-set{display:none!important}",
-      "#view-workout .step-wrap{display:contents!important}",
-      "#view-workout{padding:8px 12px calc(var(--nav-h) + var(--safe-b) + 16px)!important}",
-      "#view-workout #sessName{background:transparent;border:0;font-size:18px;font-weight:700;padding:2px 0 8px}",
-      "#view-workout .card{padding:10px 12px;margin:0 0 8px;border-radius:14px}",
-      "#view-workout .ex-name{font-size:15px}",
-      "#view-workout .tiny{font-size:11px}",
-      "#view-workout .set-grid{display:grid!important;grid-template-columns:18px 1fr 64px 40px!important;gap:6px;margin-top:6px}",
-      "#view-workout .set-grid.tiny{display:none!important}",
-      "#view-workout .set-grid input{height:40px;font-size:16px;font-weight:700;text-align:center;background:#0a0a0a;border:1px solid #222;border-radius:10px}",
-      "#view-workout [data-act='toggle-set']{width:40px!important;height:40px!important}",
-      "#view-workout [data-act='add-set']{padding:6px 0;font-size:13px}"
-    ].join("");
+  function load(k, fb) {
+    try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; }
   }
-  function strip() {
-    ["trainDock", "continueBox", "restBar", "sessStrip"].forEach(function (id) {
-      var n = document.getElementById(id);
-      if (n) n.remove();
-    });
-    document.querySelectorAll("#view-workout button, #view-workout .card").forEach(function (el) {
-      var t = (el.textContent || "").replace(/\s+/g, " ").trim();
-      if (/^continue/i.test(t) && el.querySelectorAll(".set-grid").length === 0) el.remove();
+  function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+  function uid() { return Math.random().toString(36).slice(2, 10); }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+      return ({ "&": "&#38;", "<": "&#60;", ">": "&#62;", '"': "&#34;" })[c];
     });
   }
-  css();
-  strip();
-  document.addEventListener("click", function () { setTimeout(strip, 40); });
-  var view = document.getElementById("view-workout");
-  if (view) new MutationObserver(function () { strip(); }).observe(view, { childList: true });
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { css(); strip(); });
+  function session() {
+    var s = load("il_session", null);
+    if (!s) s = { id: uid(), name: "Workout", ts: Date.now(), exercises: [], notes: "" };
+    if (!s.exercises) s.exercises = [];
+    return s;
+  }
+  function saveSession(s) { save("il_session", s); }
+  var host = document.getElementById("view-workout");
+  if (!host) return;
+  host.innerHTML = "";
+  var root = host.shadowRoot || host.attachShadow({ mode: "open" });
+  var style = document.createElement("style");
+  style.textContent = [
+    ":host{display:none;padding:12px 16px 28px;color:#f4f4f5;font-family:system-ui,-apple-system,sans-serif}",
+    ":host(.active){display:block}",
+    "#view-workout > *{display:none!important}",
+    "h1{font-size:20px;font-weight:700;margin:0 0 12px;background:transparent;border:0;color:#f4f4f5;width:100%;padding:0}",
+    ".card{background:#141414;border:1px solid #1e1e1e;border-radius:16px;padding:12px;margin:0 0 10px}",
+    ".name{font-size:16px;font-weight:700}",
+    ".sub{color:#8d8d8d;font-size:12px;margin-top:2px}",
+    ".row{display:grid;grid-template-columns:22px 1fr 64px 44px;gap:8px;align-items:center;margin-top:8px}",
+    "input{width:100%;height:44px;text-align:center;font-size:17px;font-weight:700;background:#0a0a0a;color:#f4f4f5;border:1px solid #222;border-radius:12px}",
+    "button{font:inherit;color:inherit;cursor:pointer}",
+    ".tick{width:44px;height:44px;border-radius:12px;border:1px solid #333;background:#1c1c1c;font-weight:800}",
+    ".tick.on{background:#f4f4f5;color:#111;border-color:#f4f4f5}",
+    ".add,.link{background:none;border:0;color:#8d8d8d;padding:8px 0;font-weight:600}",
+    ".x{float:right;background:none;border:0;color:#8d8d8d;font-size:16px}",
+    ".save{width:100%;min-height:48px;border-radius:14px;border:1px solid #2a2a2e;background:#1c1c1c;font-weight:700;margin-top:8px}",
+    ".empty{color:#8d8d8d;padding:8px 0 16px}"
+  ].join("");
+  var wrap = document.createElement("div");
+  root.innerHTML = "";
+  root.appendChild(style);
+  root.appendChild(wrap);
+  function paint() {
+    host.classList.toggle("active", host.classList.contains("active") || document.getElementById("view-workout") === host && host.classList.contains("active"));
+    var s = session();
+    var html = '<input id="nm" value="' + esc(s.name || "Workout") + '" />';
+    if (!s.exercises.length) html += '<div class="empty">No lifts yet. Add them from Gear.</div><button class="save" type="button" id="goGear">Add from Gear</button>';
+    s.exercises.forEach(function (ex, i) {
+      html += '<div class="card"><button class="x" type="button" data-rm="' + i + '">\u00d7</button><div class="name">' + esc(ex.n) + '</div><div class="sub">' + esc(ex.t || "") + '</div>';
+      (ex.sets || []).forEach(function (set, si) {
+        html += '<div class="row"><div>' + (si + 1) + '</div>' +
+          '<input inputmode="decimal" data-w="' + i + ':' + si + '" value="' + esc(set.w || "") + '" />' +
+          '<input inputmode="numeric" data-r="' + i + ':' + si + '" value="' + esc(set.r || "") + '" />' +
+          '<button class="tick' + (set.done ? " on" : "") + '" type="button" data-tick="' + i + ':' + si + '">' + (set.done ? "\u2713" : "") + '</button></div>';
+      });
+      html += '<button class="add" type="button" data-add="' + i + '">+ Set</button></div>';
+    });
+    if (s.exercises.length) html += '<button class="save" type="button" id="save">Save workout</button>';
+    var focus = root.activeElement && root.activeElement.getAttribute && (root.activeElement.getAttribute("data-w") || root.activeElement.getAttribute("data-r") || root.activeElement.id);
+    wrap.innerHTML = html;
+    if (focus) {
+      var again = root.querySelector("[data-w='" + focus + "'],[data-r='" + focus + "'],#" + focus);
+      if (again) again.focus();
+    }
+  }
+  function read() {
+    var s = session();
+    var nm = root.getElementById("nm");
+    if (nm) s.name = nm.value;
+    root.querySelectorAll("[data-w]").forEach(function (inp) {
+      var p = inp.getAttribute("data-w").split(":");
+      if (s.exercises[p[0]] && s.exercises[p[0]].sets[p[1]]) s.exercises[p[0]].sets[p[1]].w = inp.value;
+    });
+    root.querySelectorAll("[data-r]").forEach(function (inp) {
+      var p = inp.getAttribute("data-r").split(":");
+      if (s.exercises[p[0]] && s.exercises[p[0]].sets[p[1]]) s.exercises[p[0]].sets[p[1]].r = inp.value;
+    });
+    saveSession(s);
+    return s;
+  }
+  root.addEventListener("input", function () { read(); });
+  root.addEventListener("click", function (e) {
+    var t = e.target;
+    if (t.id === "goGear") {
+      var b = document.querySelector('.nav button[data-view="library"]');
+      if (b) b.click();
+      return;
+    }
+    if (t.id === "save") {
+      var s = read();
+      if (!s.exercises.length) return;
+      s.ts = Date.now();
+      s.finished = true;
+      var list = load("il_workouts", []);
+      list.unshift(s);
+      save("il_workouts", list);
+      localStorage.removeItem("il_session");
+      localStorage.removeItem("il_clock");
+      paint();
+      var hist = document.querySelector('.nav button[data-view="history"]');
+      if (hist) hist.click();
+      return;
+    }
+    if (t.getAttribute("data-add") != null) {
+      var s2 = read();
+      var i = Number(t.getAttribute("data-add"));
+      var prev = (s2.exercises[i].sets || []).slice().reverse().filter(function (x) { return x.w || x.r; })[0] || {};
+      s2.exercises[i].sets.push({ id: uid(), w: prev.w || "", r: prev.r || "", done: false });
+      saveSession(s2);
+      paint();
+      return;
+    }
+    if (t.getAttribute("data-rm") != null) {
+      var s3 = read();
+      s3.exercises.splice(Number(t.getAttribute("data-rm")), 1);
+      saveSession(s3);
+      paint();
+      return;
+    }
+    if (t.getAttribute("data-tick")) {
+      var s4 = read();
+      var p = t.getAttribute("data-tick").split(":");
+      var set = s4.exercises[p[0]] && s4.exercises[p[0]].sets[p[1]];
+      if (set) set.done = !set.done;
+      saveSession(s4);
+      paint();
+    }
+  });
+  document.querySelectorAll(".nav button").forEach(function (b) {
+    b.addEventListener("click", function () { setTimeout(paint, 30); });
+  });
+  paint();
+  setInterval(function () {
+    if (!host.classList.contains("active")) return;
+    if (root.activeElement && root.activeElement.tagName === "INPUT") return;
+    var s = load("il_session", null);
+    var n = s && s.exercises ? s.exercises.length : 0;
+    if (n !== wrap.querySelectorAll(".card").length) paint();
+  }, 800);
 })();
