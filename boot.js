@@ -1,5 +1,5 @@
 (function () {
-  ["brand.js", "logrange.js"].forEach(function (src) {
+  ["brand.js", "logrange.js", "batch.js"].forEach(function (src) {
     if (document.querySelector("script[src='" + src + "']")) return;
     var s = document.createElement("script");
     s.src = src;
