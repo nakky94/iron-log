@@ -1,5 +1,5 @@
 (function () {
-  var page = 0, SIZE = 16;
+  var page = 0, SIZE = 16, filter = "all";
   function load(k, fb) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } }
   function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
   function favs() { return load("il_fav_ex", []); }
@@ -7,52 +7,58 @@
     var n = card.querySelector(".ex-name");
     return ((n && n.textContent) || "").replace(/\s+/g, " ").trim();
   }
-  function capType(el) {
-    var t = (el.textContent || "").trim();
-    if (/^dumbbell$/i.test(t)) el.textContent = "Dumbbell";
-    else if (/^machine$/i.test(t)) el.textContent = "Machine";
+  function kind(card) {
+    var t = (card.textContent || "").toLowerCase();
+    if (t.indexOf("machine") >= 0 && t.indexOf("dumbbell") < 0) return "machine";
+    if (t.indexOf("dumbbell") >= 0) return "dumbbell";
+    return "other";
   }
   var css = document.getElementById("gearPageCss");
   if (!css) { css = document.createElement("style"); css.id = "gearPageCss"; document.head.appendChild(css); }
   css.textContent = [
     "#view-library input[type='search'],#view-library #libSearch,#view-library [placeholder*='earch']{display:none!important}",
     "#view-library .ex-hide{display:none!important}",
+    "#gearBar{display:flex;gap:6px;align-items:center;margin:8px 0 10px;overflow-x:auto}",
+    "#gearBar button{min-height:34px;padding:0 12px;border-radius:999px;border:1px solid #2a2a2e;background:#1c1c1c;color:#f4f4f5;white-space:nowrap}",
+    "#gearBar button.on{background:#f4f4f5;color:#111}",
+    "#gearBar #addEx{margin-left:auto}",
     "#gearGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}",
-    "#gearGrid .card{margin:0!important;padding:10px!important;min-height:72px;text-align:left}",
+    "#gearGrid .card{margin:0!important;padding:12px 36px 12px 10px!important;min-height:52px;text-align:left;position:relative}",
     "#gearGrid .ex-name{font-size:14px;line-height:1.25;display:block}",
-    "#gearAdd,#gearPager{display:flex;gap:8px;align-items:center;margin:8px 0}",
-    "#gearAdd button,#gearPager button,.fav-ex{min-height:32px;padding:0 10px;border-radius:999px;border:1px solid #2a2a2e;background:#1c1c1c;color:#f4f4f5}",
+    "#gearGrid .tiny{display:none!important}",
+    "#gearPager{display:flex;gap:8px;align-items:center;margin:8px 0 16px}",
+    "#gearPager button,.fav-ex{min-height:32px;padding:0 10px;border-radius:999px;border:1px solid #2a2a2e;background:#1c1c1c;color:#f4f4f5}",
     ".fav-ex{position:absolute;top:8px;right:8px;width:32px;padding:0}"
   ].join("");
   function real(card) {
     var n = nameOf(card);
     if (!n || n === "Locker" || /^dumbbell$/i.test(n) || /^machine$/i.test(n)) return false;
-    if (/custom exercise|recently used/i.test(n)) return false;
+    if (/custom exercise|recently used|suggested from/i.test(n)) return false;
     return true;
   }
   function paint() {
     var view = document.getElementById("view-library");
     if (!view || !view.classList.contains("active")) return;
-    view.querySelectorAll("input").forEach(function (el) {
-      if (el.type === "search" || /search/i.test(el.getAttribute("placeholder") || "")) el.classList.add("ex-hide");
+    view.querySelectorAll("button, .tiny, div, h2, h3").forEach(function (el) {
+      if (el.closest("#gearLocker,#gearGrid,#gearBar,#gearPager")) return;
+      var t = (el.textContent || "").replace(/\s+/g, " ").trim();
+      if (t && t.length < 80 && /recently used|custom exercise|suggested from this locker/i.test(t)) el.classList.add("ex-hide");
     });
-    view.querySelectorAll(".tiny, span").forEach(capType);
-    var add = document.getElementById("gearAdd");
-    if (!add) { add = document.createElement("div"); add.id = "gearAdd"; view.insertBefore(add, view.firstChild); }
-    if (!add.querySelector("#addEx")) add.innerHTML = "<button type='button' id='addEx'>Add exercise</button>";
+    var bar = document.getElementById("gearBar");
+    if (!bar) { bar = document.createElement("div"); bar.id = "gearBar"; view.insertBefore(bar, view.firstChild); }
+    bar.innerHTML = "<button type='button' data-gf='all' class='" + (filter === "all" ? "on" : "") + "'>All</button><button type='button' data-gf='dumbbell' class='" + (filter === "dumbbell" ? "on" : "") + "'>Dumbbell</button><button type='button' data-gf='machine' class='" + (filter === "machine" ? "on" : "") + "'>Machine</button><button type='button' id='addEx'>Add exercise</button>";
     var grid = document.getElementById("gearGrid");
-    if (!grid) { grid = document.createElement("div"); grid.id = "gearGrid"; add.insertAdjacentElement("afterend", grid); }
+    if (!grid) { grid = document.createElement("div"); grid.id = "gearGrid"; bar.insertAdjacentElement("afterend", grid); }
     var cards = Array.prototype.slice.call(view.querySelectorAll(".card")).filter(real);
     var fav = favs();
-    cards.sort(function (a, b) {
-      return (fav.indexOf(nameOf(a)) >= 0 ? 0 : 1) - (fav.indexOf(nameOf(b)) >= 0 ? 0 : 1);
-    });
+    cards.sort(function (a, b) { return (fav.indexOf(nameOf(a)) >= 0 ? 0 : 1) - (fav.indexOf(nameOf(b)) >= 0 ? 0 : 1); });
+    var shown = cards.filter(function (c) { return filter === "all" || kind(c) === filter; });
     cards.forEach(function (c) { grid.appendChild(c); });
-    var pages = Math.max(1, Math.ceil(cards.length / SIZE));
+    var pages = Math.max(1, Math.ceil(shown.length / SIZE));
     if (page >= pages) page = pages - 1;
-    cards.forEach(function (c, i) {
+    cards.forEach(function (c) { c.classList.add("ex-hide"); });
+    shown.forEach(function (c, i) {
       c.classList.toggle("ex-hide", i < page * SIZE || i >= (page + 1) * SIZE);
-      c.querySelectorAll(".tiny, span").forEach(capType);
       if (c.querySelector(".fav-ex")) return;
       var star = document.createElement("button");
       star.type = "button"; star.className = "fav-ex";
@@ -85,6 +91,8 @@
     page = 0; paint();
   }
   document.addEventListener("click", function (e) {
+    var f = e.target.closest("[data-gf]");
+    if (f) { filter = f.getAttribute("data-gf"); page = 0; paint(); return; }
     if (e.target.id === "addEx") { e.preventDefault(); e.stopPropagation(); addExercise(); return; }
     if (e.target.id === "gearPrev") { page = Math.max(0, page - 1); paint(); }
     if (e.target.id === "gearNext") { page += 1; paint(); }
