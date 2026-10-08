@@ -8,6 +8,7 @@
   function load(k, fb) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } }
   function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
   function clock() { return load("il_clock", {}); }
+  function session() { return load("il_session", null); }
   function fmt(sec) { sec = Math.max(0, Math.floor(sec)); var m = Math.floor(sec / 60), s = String(sec % 60); if (s.length < 2) s = "0" + s; return m + ":" + s; }
   function elapsed() {
     var c = clock();
@@ -18,11 +19,9 @@
   function paused() { return !!clock().pausedAt; }
   var css = document.getElementById("sessTimerCss");
   if (!css) { css = document.createElement("style"); css.id = "sessTimerCss"; document.head.appendChild(css); }
-  css.textContent = "#sessClock,#clkPause,#clkEnd{display:none!important}#sessionTimer{display:none;position:sticky;top:0;z-index:12;margin:0 0 10px;background:#141414;border:1px solid #2a2a2e;border-radius:16px;padding:10px 12px;align-items:center;justify-content:space-between;gap:8px}#sessionTimer.on{display:flex}#sessionTimer b{font-size:22px;font-variant-numeric:tabular-nums}#sessionTimer button{min-height:36px;padding:0 12px;border-radius:999px;border:1px solid #2a2a2e;background:#1c1c1c;color:#f4f4f5}";
-  function dropOld() {
-    var old = document.getElementById("sessClock");
-    if (old) old.remove();
-  }
+  css.textContent = "#sessClock,#clkPause,#clkEnd{display:none!important}#sessionTimer,#trainStart{display:none;position:sticky;top:0;z-index:12;margin:0 0 10px}#sessionTimer.on,#trainStart.on{display:flex}#sessionTimer{background:#141414;border:1px solid #2a2a2e;border-radius:16px;padding:10px 12px;align-items:center;justify-content:space-between;gap:8px}#sessionTimer b{font-size:22px;font-variant-numeric:tabular-nums}#sessionTimer button,#trainStart{min-height:48px;padding:0 14px;border-radius:14px;border:1px solid #2a2a2e;background:#f4f4f5;color:#111;font-weight:700;width:100%;justify-content:center}";
+  function dropOld() { var old = document.getElementById("sessClock"); if (old) old.remove(); }
+  function hasMoves() { var s = session(); return !!(s && (s.exercises || []).length); }
   function bar() {
     var view = document.getElementById("view-workout");
     if (!view) return null;
@@ -30,10 +29,23 @@
     if (!el) { el = document.createElement("div"); el.id = "sessionTimer"; view.insertBefore(el, view.firstChild); }
     return el;
   }
+  function startBtn() {
+    var view = document.getElementById("view-workout");
+    if (!view) return null;
+    var el = document.getElementById("trainStart");
+    if (!el) { el = document.createElement("button"); el.id = "trainStart"; el.type = "button"; el.textContent = "Start workout"; view.insertBefore(el, view.firstChild); }
+    return el;
+  }
   function started() { var c = clock(); return !!(c.userStarted && c.startedAt); }
   function start() {
     var c = clock();
-    if (!c.userStarted) { c.userStarted = true; c.startedAt = Date.now(); c.pauseMs = 0; c.pausedAt = null; save("il_clock", c); }
+    c.userStarted = true;
+    if (!c.startedAt || c.pausedAt) {
+      if (!c.startedAt) c.startedAt = Date.now();
+      c.pauseMs = c.pauseMs || 0;
+      c.pausedAt = null;
+    }
+    save("il_clock", c);
     paint();
   }
   function togglePause() {
@@ -55,8 +67,11 @@
   function paint() {
     dropOld();
     var el = bar();
-    if (!el) return;
+    var go = startBtn();
+    if (!el || !go) return;
     var on = document.getElementById("view-workout") && document.getElementById("view-workout").classList.contains("active");
+    if (!on || !hasMoves() || started()) go.classList.remove("on");
+    else go.classList.add("on");
     if (!on || !started()) { el.classList.remove("on"); return; }
     el.classList.add("on");
     var rest = restUntil > Date.now();
@@ -71,13 +86,13 @@
     }
   }
   document.addEventListener("click", function (e) {
-    if (e.target.id === "clkPause" || e.target.id === "clkEnd") { e.preventDefault(); e.stopPropagation(); return; }
+    if (e.target.id === "trainStart") { e.preventDefault(); start(); return; }
     if (e.target.id === "sessPause") { togglePause(); return; }
-    if (e.target.id === "sessEnd") { save("il_clock", {}); restUntil = 0; restLeft = 0; var el = bar(); if (el) { el.classList.remove("on"); el.dataset.mode = ""; } return; }
+    if (e.target.id === "sessEnd") { save("il_clock", {}); restUntil = 0; restLeft = 0; var el = bar(); if (el) { el.classList.remove("on"); el.dataset.mode = ""; } paint(); return; }
     if (e.target.id === "restSkip") { restUntil = 0; restLeft = 0; var el = bar(); if (el) el.dataset.mode = ""; paint(); return; }
-    if (e.target.closest("[data-act='start'], [data-act='resume'], [data-act='load-routine'], #hsStart")) { start(); return; }
+    if (e.target.closest("[data-act='load-routine'], #hsStart")) { setTimeout(paint, 80); return; }
     var tick = e.target.closest("[data-act='toggle-set']");
-    if (tick && !paused()) { start(); restUntil = Date.now() + 90 * 1000; restLeft = 0; var el = bar(); if (el) el.dataset.mode = ""; paint(); }
+    if (tick && started() && !paused()) { restUntil = Date.now() + 90 * 1000; restLeft = 0; var el = bar(); if (el) el.dataset.mode = ""; paint(); }
   }, true);
   setInterval(paint, 1000);
   paint();
