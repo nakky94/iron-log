@@ -13,7 +13,9 @@
   css.textContent = [
     "[data-hs-tpl]{display:flex!important;align-items:center;gap:8px}",
     "[data-hs-tpl] .tpl-body{flex:1;min-width:0;text-align:left}",
-    ".tpl-edit,.tpl-up,.tpl-down{flex:0 0 auto;width:auto!important;min-height:32px!important;padding:0 10px!important;border-radius:999px!important;border:1px solid #2a2a2e!important;background:#1c1c1c!important;color:#f4f4f5!important;font-size:13px!important;font-weight:650!important}",
+    ".tpl-edit{flex:0 0 auto;width:auto!important;min-height:28px!important;padding:0 8px!important;border:0!important;background:transparent!important;color:#8d8d92!important;font-size:13px!important;font-weight:650!important}",
+    ".tpl-move{display:flex;flex-direction:column;gap:2px;flex:0 0 auto}",
+    ".tpl-up,.tpl-down{width:22px!important;height:16px!important;min-height:16px!important;padding:0!important;border:0!important;background:transparent!important;color:#6e6e73!important;font-size:11px!important;line-height:1!important}",
     "#tplEdit{position:fixed;inset:0;background:#090909;z-index:70;display:none;overflow:auto;padding:16px 16px 40px}",
     "#tplEdit.on{display:block}",
     "#tplEdit .ex{display:flex;align-items:center;gap:8px;background:#141414;border:1px solid #222;border-radius:14px;padding:10px 12px;margin-top:8px}",
@@ -38,7 +40,7 @@
     var opts = names().map(function (e) { return "<option value='" + esc(e.n) + "'>" + esc(e.n) + "</option>"; }).join("");
     var html = "<button type='button' id='tplBack'>Back</button><input id='tplName' value='" + esc(r.name) + "' style='margin:16px 0 8px' />";
     r.exercises.forEach(function (e, i) {
-      html += "<div class='ex'><b>" + esc(e.n) + "</b><button type='button' data-up='" + i + "'>Up</button><button type='button' data-down='" + i + "'>Down</button><button type='button' data-del='" + i + "'>Remove</button></div>";
+      html += "<div class='ex'><b>" + esc(e.n) + "</b><button type='button' data-up='" + i + "'>\u2191</button><button type='button' data-down='" + i + "'>\u2193</button><button type='button' data-del='" + i + "'>Remove</button></div>";
     });
     html += "<div class='acts'><select id='tplAdd'>" + opts + "</select><button type='button' id='tplAddBtn'>Add</button></div>";
     html += "<div class='acts'><button type='button' id='tplSave'>Save</button><button type='button' id='tplDelete'>Delete</button></div>";
@@ -118,18 +120,25 @@
       while (card.firstChild) body.appendChild(card.firstChild);
       card.appendChild(body);
       var id = card.getAttribute("data-hs-tpl");
-      ["Up", "Down", "Edit"].forEach(function (label) {
+      var stack = document.createElement("div");
+      stack.className = "tpl-move";
+      ["\u2191", "\u2193"].forEach(function (label, idx) {
         var b = document.createElement("button");
         b.type = "button";
-        b.className = label === "Edit" ? "tpl-edit" : (label === "Up" ? "tpl-up" : "tpl-down");
+        b.className = idx === 0 ? "tpl-up" : "tpl-down";
         b.textContent = label;
+        b.setAttribute("aria-label", idx === 0 ? "Move up" : "Move down");
         b.addEventListener("click", function (e) {
           e.preventDefault(); e.stopPropagation();
-          if (label === "Edit") open(id);
-          else move(id, label === "Up" ? -1 : 1);
+          move(id, idx === 0 ? -1 : 1);
         });
-        card.appendChild(b);
+        stack.appendChild(b);
       });
+      card.appendChild(stack);
+      var edit = document.createElement("button");
+      edit.type = "button"; edit.className = "tpl-edit"; edit.textContent = "Edit";
+      edit.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); open(id); });
+      card.appendChild(edit);
     });
   }
   buttons();
