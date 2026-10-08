@@ -6,9 +6,9 @@
   var css = document.getElementById("tplStyle");
   if (!css) { css = document.createElement("style"); css.id = "tplStyle"; document.head.appendChild(css); }
   css.textContent = [
-    "[data-hs-tpl]{display:flex!important;align-items:center;gap:12px}",
+    "[data-hs-tpl]{display:flex!important;align-items:center;gap:8px}",
     "[data-hs-tpl] .tpl-body{flex:1;min-width:0;text-align:left}",
-    ".tpl-edit{flex:0 0 auto;width:auto!important;min-height:32px!important;padding:0 12px!important;border-radius:999px!important;border:1px solid #2a2a2e!important;background:#1c1c1c!important;color:#f4f4f5!important;font-size:13px!important;font-weight:650!important}",
+    ".tpl-edit,.tpl-up,.tpl-down{flex:0 0 auto;width:auto!important;min-height:32px!important;padding:0 10px!important;border-radius:999px!important;border:1px solid #2a2a2e!important;background:#1c1c1c!important;color:#f4f4f5!important;font-size:13px!important;font-weight:650!important}",
     "#tplEdit{position:fixed;inset:0;background:#090909;z-index:70;display:none;overflow:auto;padding:16px 16px 40px}",
     "#tplEdit.on{display:block}",
     "#tplEdit .ex{display:flex;align-items:center;gap:8px;background:#141414;border:1px solid #222;border-radius:14px;padding:10px 12px;margin-top:8px}",
@@ -25,6 +25,7 @@
     load("il_workouts", []).forEach(function (w) { (w.exercises || []).forEach(function (e) { if (e.n && !seen[e.n]) { seen[e.n] = 1; out.push({ eid: e.eid, n: e.n, t: e.t, m: e.m }); } }); });
     return out;
   }
+  function refresh() { if (window.gymPaintHome) window.gymPaintHome(); setTimeout(buttons, 40); }
   function open(id) {
     var r = routines().filter(function (x) { return x.id === id; })[0];
     if (!r) return;
@@ -40,11 +41,12 @@
     root.classList.add("on");
     root.onclick = function (e) {
       var t = e.target;
-      if (t.id === "tplBack") { root.classList.remove("on"); return; }
+      if (t.id === "tplBack") { root.classList.remove("on"); refresh(); return; }
       if (t.id === "tplDelete") {
         if (!confirm("Delete this template?")) return;
         save("il_routines", routines().filter(function (x) { return x.id !== id; }));
         root.classList.remove("on");
+        refresh();
         return;
       }
       if (t.id === "tplSave") {
@@ -53,10 +55,12 @@
         if (cur) cur.name = document.getElementById("tplName").value || cur.name;
         save("il_routines", all);
         root.classList.remove("on");
+        refresh();
         return;
       }
       if (t.id === "tplAddBtn") {
         var pick = document.getElementById("tplAdd").value;
+        if (!pick) return;
         var src = names().filter(function (x) { return x.n === pick; })[0] || { n: pick };
         var all = routines();
         var cur = all.filter(function (x) { return x.id === id; })[0];
@@ -77,19 +81,50 @@
       open(id);
     };
   }
+  function move(id, dir) {
+    var all = routines();
+    var i = all.findIndex(function (x) { return x.id === id; });
+    var j = i + dir;
+    if (i < 0 || j < 0 || j >= all.length) return;
+    var tmp = all[i]; all[i] = all[j]; all[j] = tmp;
+    save("il_routines", all);
+    refresh();
+  }
+  function create() {
+    var name = prompt("Template name");
+    if (!name) return;
+    var id = "tpl" + Date.now().toString(36);
+    var all = routines();
+    all.push({ id: id, name: name, exercises: [] });
+    save("il_routines", all);
+    refresh();
+    open(id);
+  }
   function buttons() {
+    var neu = document.getElementById("hsNewTpl");
+    if (neu && !neu.dataset.bound) {
+      neu.dataset.bound = "1";
+      neu.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); create(); });
+    }
     document.querySelectorAll("[data-hs-tpl]").forEach(function (card) {
       if (card.querySelector(".tpl-edit")) return;
       var body = document.createElement("div");
       body.className = "tpl-body";
       while (card.firstChild) body.appendChild(card.firstChild);
       card.appendChild(body);
-      var b = document.createElement("button");
-      b.type = "button";
-      b.className = "tpl-edit";
-      b.textContent = "Edit";
-      b.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); open(card.getAttribute("data-hs-tpl")); });
-      card.appendChild(b);
+      var id = card.getAttribute("data-hs-tpl");
+      ["Up", "Down", "Edit"].forEach(function (label) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = label === "Edit" ? "tpl-edit" : (label === "Up" ? "tpl-up" : "tpl-down");
+        b.textContent = label;
+        b.addEventListener("click", function (e) {
+          e.preventDefault(); e.stopPropagation();
+          if (label === "Edit") open(id);
+          else move(id, label === "Up" ? -1 : 1);
+        });
+        card.appendChild(b);
+      });
     });
   }
   buttons();
