@@ -12,12 +12,14 @@
     "#view-workout .set-grid{display:none!important}",
     "#view-workout .pro-row{display:flex;align-items:center;gap:8px;margin-top:8px}",
     "#view-workout .pro-n{width:22px;flex:0 0 22px;text-align:center;color:#8d8d92;font-size:13px;font-weight:650}",
-    "#view-workout .pro-kg{flex:1;display:flex;align-items:center;height:46px;background:#171717;border:1px solid #2a2a2e;border-radius:14px;overflow:hidden}",
-    "#view-workout .pro-kg button{width:42px;height:46px;flex:0 0 42px;border:0;background:#222;color:#f4f4f5;font-size:20px;font-weight:600}",
-    "#view-workout .pro-kg input{flex:1;min-width:0;height:46px;border:0;background:transparent;text-align:center;color:#f4f4f5;font-size:18px;font-weight:700;padding:0}",
-    "#view-workout .pro-row [data-act='set-r']{width:58px;flex:0 0 58px;height:46px;border-radius:14px;border:1px solid #2a2a2e;background:#171717;text-align:center;color:#f4f4f5;font-size:18px;font-weight:700}",
-    "#view-workout .pro-row [data-act='toggle-set']{width:46px;flex:0 0 46px;height:46px;border-radius:23px;border:1px solid #2a2a2e;background:#171717;margin:0}",
-    "#view-workout .pro-row [data-act='toggle-set']:not(.ghost){background:#f4f4f5;color:#111;border-color:#f4f4f5}"
+    "#view-workout .pro-kg{flex:1;display:flex;align-items:stretch;height:44px;background:#141414;border:1px solid #2c2c30;border-radius:22px;overflow:hidden}",
+    "#view-workout .pro-kg button{width:40px;flex:0 0 40px;border:0;background:transparent;color:#d4d4d8;font-size:18px;font-weight:500}",
+    "#view-workout .pro-kg button:first-child{border-right:1px solid #2c2c30}",
+    "#view-workout .pro-kg button:last-child{border-left:1px solid #2c2c30}",
+    "#view-workout .pro-kg input{flex:1;min-width:0;height:44px;border:0;background:transparent;text-align:center;color:#fafafa;font-size:16px;font-weight:650;letter-spacing:-.02em;padding:0}",
+    "#view-workout .pro-row [data-act='set-r']{width:52px;flex:0 0 52px;height:44px;border-radius:14px;border:1px solid #2c2c30;background:#141414;text-align:center;color:#fafafa;font-size:16px;font-weight:650}",
+    "#view-workout .pro-row [data-act='toggle-set']{width:44px;flex:0 0 44px;height:44px;border-radius:22px;border:1px solid #2c2c30;background:#141414;margin:0}",
+    "#view-workout .pro-row [data-act='toggle-set']:not(.ghost){background:#fafafa;color:#111;border-color:#fafafa}"
   ].join("");
   function bump(btn, dir) {
     var inp = btn.parentNode.querySelector("input");
@@ -42,9 +44,9 @@
       var kg = document.createElement("div");
       kg.className = "pro-kg";
       var minus = document.createElement("button");
-      minus.type = "button"; minus.textContent = "\u2212";
+      minus.type = "button"; minus.setAttribute("aria-label", "Decrease weight"); minus.textContent = "\u2212";
       var plus = document.createElement("button");
-      plus.type = "button"; plus.textContent = "+";
+      plus.type = "button"; plus.setAttribute("aria-label", "Increase weight"); plus.textContent = "+";
       kg.appendChild(minus); kg.appendChild(w); kg.appendChild(plus);
       row.appendChild(num); row.appendChild(kg); row.appendChild(r); row.appendChild(tick);
       minus.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); bump(minus, -1); });
@@ -56,7 +58,4 @@
   mount();
   var view = document.getElementById("view-workout");
   if (view) new MutationObserver(function () { mount(); }).observe(view, { childList: true, subtree: true });
-  document.querySelectorAll(".nav button").forEach(function (b) {
-    b.addEventListener("click", function () { setTimeout(mount, 60); });
-  });
 })();
