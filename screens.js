@@ -9,12 +9,7 @@
       return ({ "&": "&#38;", "<": "&#60;", ">": "&#62;", '"': "&#34;" })[c];
     });
   }
-  function shortName(n) {
-    return String(n || "").replace(/^Dumbbell\s/i, "").replace(/\sMachine$/i, "");
-  }
-  function title(s) {
-    return String(s || "").replace(/\w\S*/g, function (w) { return w.charAt(0).toUpperCase() + w.slice(1); });
-  }
+  function shortName(n) { return String(n || "").replace(/^Dumbbell\s/i, "").replace(/\sMachine$/i, ""); }
   function ago(ts) {
     var d = Math.floor((Date.now() - ts) / 864e5);
     if (d <= 0) return "Today";
@@ -46,22 +41,14 @@
     });
     return best;
   }
-  function lastLoad(name) {
-    var ws = workouts();
-    for (var i = 0; i < ws.length; i++) {
-      var e = (ws[i].exercises || []).filter(function (x) { return x.n === name; })[0];
-      if (!e) continue;
-      var best = 0, r = 0;
-      (e.sets || []).forEach(function (s) {
-        if (Number(s.w) > best) { best = Number(s.w); r = Number(s.r) || 0; }
-      });
-      if (best) return best + " kg" + (r ? " \u00d7 " + r : "");
-    }
-    return "";
-  }
   function liveInfo() {
     var s = session();
     if (!s || !(s.exercises || []).length) return null;
+    var clock = load("il_clock", {});
+    var logged = (s.exercises || []).some(function (e) {
+      return (e.sets || []).some(function (x) { return x.done; });
+    });
+    if (!logged && !clock.userStarted) return null;
     var done = (s.exercises || []).filter(function (e) {
       var sets = e.sets || [];
       return sets.length && sets.every(function (x) { return x.done; });
@@ -91,22 +78,18 @@
     var n = streak();
     var html = "";
     if (live) {
-      html += '<button class="card" type="button" id="hsLive" style="width:100%;text-align:left;border-color:#2a2610;background:#19160a">' +
+      html += '<button class="card" type="button" id="hsLive" style="width:100%;text-align:left">' +
         '<div class="tiny">Workout in progress</div><div class="ex-name" style="margin-top:4px">' +
-        live.done + " / " + live.total + " lifts done</div><div class="tiny" style="margin-top:4px">Tap to resume</div></button>";
+        esc(live.name) + " \u00b7 " + live.done + " / " + live.total + "</div></button>";
     }
     html += '<button class="btn" type="button" id="hsStart" style="margin:4px 0 12px;min-height:52px;font-size:17px">' +
       (live ? "Resume workout" : "Start workout") + "</button>";
     html += '<div class="stats">' +
       '<div class="stat"><b style="font-size:14px">' + esc(last ? ago(last.ts) : "\u2014") + '</b><span class="tiny">Last</span></div>' +
-      '<div class="stat stat-accent"><b style="font-size:14px">' + (n ? n + " wk" : "\u2014") + '</b><span class="tiny">Streak</span></div>' +
+      '<div class="stat"><b style="font-size:14px">' + (n ? n + " wk" : "\u2014") + '</b><span class="tiny">Streak</span></div>' +
       '<div class="stat"><b style="font-size:14px">' + esc(pr ? pr.w + " kg" : "\u2014") + '</b><span class="tiny">Latest PR</span></div></div>';
     html += '<div class="card"><div class="tiny">Last workout</div><div class="ex-name" style="margin-top:4px">' +
-      esc(last ? (last.name || "Workout") : "None yet") + '</div><div class="tiny" style="margin-top:4px">' +
-      (last ? ago(last.ts) + " \u00b7 " + (last.exercises || []).length + " lifts" : "Finish a session to see it here") + "</div></div>";
-    html += '<div class="card"><div class="tiny">Most recent PR</div><div class="ex-name" style="margin-top:4px">' +
-      esc(pr ? shortName(pr.n) : "None yet") + '</div><div class="tiny" style="margin-top:4px">' +
-      (pr ? pr.w + " kg" + (pr.r ? " \u00d7 " + pr.r : "") : "PRs land after you beat a load") + "</div></div>";
+      esc(last ? (last.name || "Workout") : "None yet") + '</div></div>';
     var rts = routines();
     html += '<div class="tiny" style="margin:12px 0 8px">Templates</div>';
     if (!rts.length) html += '<div class="tiny">Save a session as a template from Train.</div>';
@@ -118,46 +101,12 @@
     box.innerHTML = html;
     setTimeout(function () { homeLock = false; }, 80);
   }
-  function paintGear() {
-    var view = document.getElementById("view-library");
-    if (!view || !view.classList.contains("active")) return;
-    Array.prototype.slice.call(view.querySelectorAll(".card")).forEach(function (card) {
-      if (card.id === "gearLocker" || card.closest("#gearLocker,#recentGear,#gearTop")) return;
-      var meta = card.querySelector(".tiny");
-      if (meta && !meta.getAttribute("data-cased")) {
-        meta.setAttribute("data-cased", "1");
-        meta.textContent = title(meta.textContent || "").replace(/Dumbbell /i, "Dumbbell \u00b7 ").replace(/Machine /i, "Machine \u00b7 ");
-      }
-      var nameEl = card.querySelector(".ex-name");
-      if (nameEl && !card.querySelector(".last-load")) {
-        var last = lastLoad(nameEl.textContent.trim());
-        if (last) {
-          var line = document.createElement("div");
-          line.className = "tiny last-load";
-          line.style.marginTop = "4px";
-          line.textContent = "Last " + last;
-          nameEl.insertAdjacentElement("afterend", line);
-        }
-      }
-      var add = card.querySelector("[data-act='add-ex']");
-      if (add) {
-        add.className = "btn sm";
-        add.style.width = "auto";
-        add.textContent = "Add";
-      }
-    });
-    var custom = Array.prototype.slice.call(view.querySelectorAll("button")).filter(function (b) {
-      return /custom exercise/i.test(b.textContent || "");
-    })[0];
-    if (custom) custom.style.marginBottom = "10px";
-  }
   function openTpl(id) {
     var r = routines().filter(function (x) { return x.id === id; })[0];
     if (!r) return;
-    var html = '<div class="grab"></div><div class="ex-name">' + esc(r.name) + '</div>';
-    html += '<div class="tiny" style="margin:6px 0 12px">' + (r.exercises || []).length + " exercises</div>";
+    var html = '<div class="ex-name">' + esc(r.name) + '</div>';
     (r.exercises || []).forEach(function (e, i) {
-      html += '<div class="row space" style="margin-top:8px"><div>' + (i + 1) + ". " + esc(e.n) + '</div></div>';
+      html += '<div class="row" style="margin-top:8px"><div>' + (i + 1) + ". " + esc(e.n) + "</div></div>";
     });
     html += '<button class="btn" type="button" data-act="load-routine" data-id="' + esc(r.id) + '" style="margin-top:16px">Start this session</button>';
     var sheet = document.getElementById("sheet"), modal = document.getElementById("modal");
@@ -165,37 +114,16 @@
   }
   document.addEventListener("click", function (e) {
     if (e.target.closest("#hsStart, #hsLive")) {
-      var live = liveInfo();
-      if (live) go("workout");
-      else {
-        var rts = routines();
-        if (rts[0]) openTpl(rts[0].id);
-        else go("workout");
-      }
+      if (liveInfo()) go("workout");
+      else go("library");
       return;
     }
     var tpl = e.target.closest("[data-hs-tpl]");
     if (tpl) openTpl(tpl.getAttribute("data-hs-tpl"));
-    if (e.target.closest("#sheet [data-act='load-routine']")) {
-      var modal = document.getElementById("modal");
-      if (modal) modal.classList.remove("show");
-    }
   }, true);
   document.querySelectorAll(".nav button").forEach(function (b) {
-    b.addEventListener("click", function () {
-      setTimeout(function () { paintHome(); paintGear(); }, 50);
-    });
+    b.addEventListener("click", function () { setTimeout(paintHome, 50); });
   });
-  function boot() {
-    paintHome();
-    paintGear();
-    setInterval(function () {
-      var h = document.getElementById("view-home");
-      var g = document.getElementById("view-library");
-      if (h && h.classList.contains("active")) paintHome();
-      if (g && g.classList.contains("active")) paintGear();
-    }, 1200);
-  }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
-  else boot();
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", paintHome);
+  else paintHome();
 })();
