@@ -1,10 +1,16 @@
 (function () {
   var drag = null;
+  document.addEventListener("click", function (e) {
+    var edit = e.target.closest && e.target.closest(".tpl-edit");
+    if (!edit) return;
+    var card = edit.closest("[data-hs-tpl]");
+    var root = document.getElementById("tplEdit");
+    if (card && root) root.dataset.id = card.getAttribute("data-hs-tpl");
+  }, true);
   document.addEventListener("pointerdown", function (e) {
     var row = e.target.closest && e.target.closest("#tplEdit .ex");
     if (!row || e.target.closest("button")) return;
-    drag = row;
-    row.style.opacity = ".45";
+    drag = row; row.style.opacity = ".45";
   }, true);
   document.addEventListener("pointermove", function (e) {
     if (!drag) return;
@@ -29,11 +35,6 @@
       var names = Array.prototype.map.call(document.querySelectorAll("#tplEdit .ex b"), function (b) { return b.textContent; });
       cur.exercises.sort(function (a, b) { return names.indexOf(a.n) - names.indexOf(b.n); });
       localStorage.setItem("il_routines", JSON.stringify(all));
-    } catch (e) {}
+    } catch (err) {}
   });
-  var old = document.getElementById("tplEdit");
-  if (old) new MutationObserver(function () {
-    var back = document.getElementById("tplBack");
-    if (!back || !old.classList.contains("on")) return;
-  }).observe(old, { childList: true });
 })();
