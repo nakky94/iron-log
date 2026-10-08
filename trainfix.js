@@ -9,6 +9,13 @@
       return ({ "&": "&#38;", "<": "&#60;", ">": "&#62;", '"': "&#34;" })[c];
     });
   }
+  var hide = document.getElementById("trainHide");
+  if (!hide) {
+    hide = document.createElement("style");
+    hide.id = "trainHide";
+    hide.textContent = "#view-workout > *{display:none!important}#trainDock,#continueBox,#restBar{display:none!important}";
+    document.head.appendChild(hide);
+  }
   function session() {
     var s = load("il_session", null);
     if (!s) s = { id: uid(), name: "Workout", ts: Date.now(), exercises: [], notes: "" };
@@ -17,55 +24,32 @@
   }
   function saveSession(s) { save("il_session", s); }
   var host = document.getElementById("view-workout");
+  if (!host || host.shadowRoot) {
+    if (host && host.shadowRoot) host._paint && host._paint();
+  }
   if (!host) return;
-  host.innerHTML = "";
   var root = host.shadowRoot || host.attachShadow({ mode: "open" });
+  if (root.childNodes.length) return;
   var style = document.createElement("style");
-  style.textContent = [
-    ":host{display:none;padding:12px 16px 28px;color:#f4f4f5;font-family:system-ui,-apple-system,sans-serif}",
-    ":host(.active){display:block}",
-    "#view-workout > *{display:none!important}",
-    "h1{font-size:20px;font-weight:700;margin:0 0 12px;background:transparent;border:0;color:#f4f4f5;width:100%;padding:0}",
-    ".card{background:#141414;border:1px solid #1e1e1e;border-radius:16px;padding:12px;margin:0 0 10px}",
-    ".name{font-size:16px;font-weight:700}",
-    ".sub{color:#8d8d8d;font-size:12px;margin-top:2px}",
-    ".row{display:grid;grid-template-columns:22px 1fr 64px 44px;gap:8px;align-items:center;margin-top:8px}",
-    "input{width:100%;height:44px;text-align:center;font-size:17px;font-weight:700;background:#0a0a0a;color:#f4f4f5;border:1px solid #222;border-radius:12px}",
-    "button{font:inherit;color:inherit;cursor:pointer}",
-    ".tick{width:44px;height:44px;border-radius:12px;border:1px solid #333;background:#1c1c1c;font-weight:800}",
-    ".tick.on{background:#f4f4f5;color:#111;border-color:#f4f4f5}",
-    ".add,.link{background:none;border:0;color:#8d8d8d;padding:8px 0;font-weight:600}",
-    ".x{float:right;background:none;border:0;color:#8d8d8d;font-size:16px}",
-    ".save{width:100%;min-height:48px;border-radius:14px;border:1px solid #2a2a2e;background:#1c1c1c;font-weight:700;margin-top:8px}",
-    ".empty{color:#8d8d8d;padding:8px 0 16px}"
-  ].join("");
+  style.textContent = ":host{display:block;padding:12px 16px 96px;color:#f4f4f5;font-family:system-ui,-apple-system,sans-serif}h1,input#nm{font-size:20px;font-weight:700;margin:0 0 12px;background:transparent;border:0;color:#f4f4f5;width:100%;padding:0}.card{background:#141414;border:1px solid #1e1e1e;border-radius:16px;padding:12px;margin:0 0 10px}.name{font-size:16px;font-weight:700}.sub{color:#8d8d8d;font-size:12px;margin-top:2px}.row{display:grid;grid-template-columns:22px 1fr 64px 44px;gap:8px;align-items:center;margin-top:8px}input{width:100%;height:44px;text-align:center;font-size:17px;font-weight:700;background:#0a0a0a;color:#f4f4f5;border:1px solid #222;border-radius:12px}button{font:inherit;color:inherit;cursor:pointer}.tick{width:44px;height:44px;border-radius:12px;border:1px solid #333;background:#1c1c1c;font-weight:800}.tick.on{background:#f4f4f5;color:#111;border-color:#f4f4f5}.add{background:none;border:0;color:#8d8d8d;padding:8px 0;font-weight:600}.x{float:right;background:none;border:0;color:#8d8d8d;font-size:16px}.save{width:100%;min-height:48px;border-radius:14px;border:1px solid #2a2a2e;background:#1c1c1c;font-weight:700;margin-top:8px}.empty{color:#8d8d8d;padding:8px 0 16px}";
   var wrap = document.createElement("div");
-  root.innerHTML = "";
   root.appendChild(style);
   root.appendChild(wrap);
   function paint() {
-    host.classList.toggle("active", host.classList.contains("active") || document.getElementById("view-workout") === host && host.classList.contains("active"));
     var s = session();
     var html = '<input id="nm" value="' + esc(s.name || "Workout") + '" />';
     if (!s.exercises.length) html += '<div class="empty">No lifts yet. Add them from Gear.</div><button class="save" type="button" id="goGear">Add from Gear</button>';
     s.exercises.forEach(function (ex, i) {
       html += '<div class="card"><button class="x" type="button" data-rm="' + i + '">\u00d7</button><div class="name">' + esc(ex.n) + '</div><div class="sub">' + esc(ex.t || "") + '</div>';
       (ex.sets || []).forEach(function (set, si) {
-        html += '<div class="row"><div>' + (si + 1) + '</div>' +
-          '<input inputmode="decimal" data-w="' + i + ':' + si + '" value="' + esc(set.w || "") + '" />' +
-          '<input inputmode="numeric" data-r="' + i + ':' + si + '" value="' + esc(set.r || "") + '" />' +
-          '<button class="tick' + (set.done ? " on" : "") + '" type="button" data-tick="' + i + ':' + si + '">' + (set.done ? "\u2713" : "") + '</button></div>';
+        html += '<div class="row"><div>' + (si + 1) + '</div><input inputmode="decimal" data-w="' + i + ':' + si + '" value="' + esc(set.w || "") + '" /><input inputmode="numeric" data-r="' + i + ':' + si + '" value="' + esc(set.r || "") + '" /><button class="tick' + (set.done ? " on" : "") + '" type="button" data-tick="' + i + ':' + si + '">' + (set.done ? "\u2713" : "") + '</button></div>';
       });
       html += '<button class="add" type="button" data-add="' + i + '">+ Set</button></div>';
     });
     if (s.exercises.length) html += '<button class="save" type="button" id="save">Save workout</button>';
-    var focus = root.activeElement && root.activeElement.getAttribute && (root.activeElement.getAttribute("data-w") || root.activeElement.getAttribute("data-r") || root.activeElement.id);
     wrap.innerHTML = html;
-    if (focus) {
-      var again = root.querySelector("[data-w='" + focus + "'],[data-r='" + focus + "'],#" + focus);
-      if (again) again.focus();
-    }
   }
+  host._paint = paint;
   function read() {
     var s = session();
     var nm = root.getElementById("nm");
@@ -95,7 +79,7 @@
       s.ts = Date.now();
       s.finished = true;
       var list = load("il_workouts", []);
-      list.unshift(s);
+      list.unshift(JSON.parse(JSON.stringify(s)));
       save("il_workouts", list);
       localStorage.removeItem("il_session");
       localStorage.removeItem("il_clock");
@@ -130,7 +114,7 @@
     }
   });
   document.querySelectorAll(".nav button").forEach(function (b) {
-    b.addEventListener("click", function () { setTimeout(paint, 30); });
+    b.addEventListener("click", function () { setTimeout(paint, 40); });
   });
   paint();
   setInterval(function () {
@@ -139,5 +123,5 @@
     var s = load("il_session", null);
     var n = s && s.exercises ? s.exercises.length : 0;
     if (n !== wrap.querySelectorAll(".card").length) paint();
-  }, 800);
+  }, 700);
 })();
