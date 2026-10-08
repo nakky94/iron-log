@@ -1,4 +1,9 @@
 (function () {
+  if (!document.querySelector('script[src="gearlink.js"]')) {
+    var g = document.createElement("script");
+    g.src = "gearlink.js";
+    document.body.appendChild(g);
+  }
   var restUntil = 0, restLeft = 0;
   function load(k, fb) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } }
   function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
