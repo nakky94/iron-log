@@ -8,7 +8,8 @@
   var css = document.getElementById("trainHide");
   if (!css) { css = document.createElement("style"); css.id = "trainHide"; document.head.appendChild(css); }
   css.textContent = [
-    "#trainDock,#view-workout .set-grid.tiny,#view-workout .ghost-set,#view-workout .wu-chip,#view-workout [data-act='step-w'],#view-workout [data-act='del-set'],#view-workout .kg-minus,#view-workout .kg-plus,#view-workout .step{display:none!important}",
+    "#restBar,#continueBox,#trainDock,#sessStrip,#liveHead,.rir-row,#view-workout .ghost-set,#view-workout .wu-chip,#view-workout [data-act='step-w'],#view-workout .kg-minus,#view-workout .kg-plus,#view-workout .step{display:none!important}",
+    "#view-workout .set-grid.tiny{display:none!important}",
     "#view-workout .set-grid{display:none!important}",
     "#view-workout .pro-row{display:flex!important;align-items:center;gap:8px;margin-top:8px;width:100%}",
     "#view-workout .pro-n{width:18px;flex:0 0 18px;color:#8d8d92;font-size:13px;font-weight:650;text-align:center}",
@@ -21,6 +22,28 @@
     "#view-workout .pro-row [data-act='toggle-set']{width:44px;flex:0 0 44px;height:44px;border-radius:22px;border:1px solid #2c2c30;background:#141414}",
     "#view-workout .pro-row [data-act='toggle-set']:not(.ghost){background:#fafafa;color:#111}"
   ].join("");
+  function junk(el) {
+    var t = (el.textContent || "").replace(/\s+/g, " ").trim();
+    if (!t) return false;
+    if (/^continue$/i.test(t)) return true;
+    if (/^add all$/i.test(t)) return true;
+    if (/^all exercises$/i.test(t)) return true;
+    if (/rest after a set/i.test(t) && el.querySelector("[data-rest-sec],.chip")) return true;
+    if (/workout in progress/i.test(t) && /finish workout/i.test(t)) return true;
+    if (/^RIR\s*0?1?2?3?$/i.test(t)) return true;
+    return false;
+  }
+  function strip() {
+    ["restBar", "continueBox", "trainDock", "sessStrip", "liveHead"].forEach(function (id) {
+      var n = document.getElementById(id);
+      if (n) n.remove();
+    });
+    document.querySelectorAll("#view-workout .rir-row").forEach(function (n) { n.remove(); });
+    document.querySelectorAll("#view-workout button, #view-workout .card, #view-workout .tiny, #view-workout div").forEach(function (el) {
+      if (el.querySelector && el.querySelector(".set-grid,.pro-row,[data-act='set-w']")) return;
+      if (junk(el)) el.remove();
+    });
+  }
   function bump(btn, dir) {
     var inp = btn.parentNode.querySelector("input");
     if (!inp) return;
@@ -29,6 +52,7 @@
     inp.dispatchEvent(new Event("change", { bubbles: true }));
   }
   function mount() {
+    strip();
     document.querySelectorAll("#view-workout .kg-step").forEach(function (wrap) {
       var inp = wrap.querySelector("input");
       if (inp) wrap.parentNode.insertBefore(inp, wrap);
