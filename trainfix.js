@@ -8,18 +8,18 @@
   var css = document.getElementById("trainHide");
   if (!css) { css = document.createElement("style"); css.id = "trainHide"; document.head.appendChild(css); }
   css.textContent = [
-    "#view-workout .set-grid.tiny,#view-workout .ghost-set,#view-workout .wu-chip,#view-workout [data-act='step-w'],#view-workout [data-act='del-set']{display:none!important}",
+    "#trainDock,#view-workout .set-grid.tiny,#view-workout .ghost-set,#view-workout .wu-chip,#view-workout [data-act='step-w'],#view-workout [data-act='del-set'],#view-workout .kg-minus,#view-workout .kg-plus,#view-workout .step{display:none!important}",
     "#view-workout .set-grid{display:none!important}",
-    "#view-workout .pro-row{display:flex!important;align-items:center;gap:8px;margin-top:8px;width:100%;min-width:0}",
-    "#view-workout .pro-n{width:18px;flex:0 0 18px;text-align:center;color:#8d8d92;font-size:13px;font-weight:650}",
-    "#view-workout .pro-kg{flex:1 1 0!important;min-width:0!important;display:flex!important;align-items:center;height:48px;background:#141414;border:1px solid #2c2c30;border-radius:16px}",
-    "#view-workout .pro-kg button{width:40px!important;flex:0 0 40px!important;height:48px;border:0;background:transparent;color:#e4e4e7;font-size:22px;font-weight:500;padding:0}",
-    "#view-workout .pro-kg button:first-child{border-right:1px solid #2c2c30}",
-    "#view-workout .pro-kg button:last-child{border-left:1px solid #2c2c30}",
-    "#view-workout .pro-kg input{flex:1 1 0!important;width:0!important;min-width:0!important;max-width:none!important;height:48px!important;border:0!important;background:transparent!important;text-align:center!important;color:#fff!important;font-size:20px!important;font-weight:700!important;padding:0 2px!important}",
-    "#view-workout .pro-row [data-act='set-r']{width:52px!important;flex:0 0 52px!important;min-width:52px!important;height:48px!important;border-radius:14px!important;border:1px solid #2c2c30!important;background:#141414!important;text-align:center!important;color:#fff!important;font-size:18px!important;font-weight:700!important}",
-    "#view-workout .pro-row [data-act='toggle-set']{width:44px!important;flex:0 0 44px!important;height:44px!important;border-radius:22px!important;border:1px solid #2c2c30!important;background:#141414!important;margin:0!important}",
-    "#view-workout .pro-row [data-act='toggle-set']:not(.ghost){background:#fafafa!important;color:#111!important;border-color:#fafafa!important}"
+    "#view-workout .pro-row{display:flex!important;align-items:center;gap:8px;margin-top:8px;width:100%}",
+    "#view-workout .pro-n{width:18px;flex:0 0 18px;color:#8d8d92;font-size:13px;font-weight:650;text-align:center}",
+    "#view-workout .pro-kg{flex:1 1 auto;display:flex;align-items:center;height:48px;min-width:0;background:#141414;border:1px solid #2c2c30;border-radius:16px}",
+    "#view-workout .pro-kg > button{width:40px;flex:0 0 40px;height:48px;border:0;background:transparent;color:#e4e4e7;font-size:22px}",
+    "#view-workout .pro-kg > button:first-child{border-right:1px solid #2c2c30}",
+    "#view-workout .pro-kg > button:last-child{border-left:1px solid #2c2c30}",
+    "#view-workout .pro-kg input{display:block!important;flex:1 1 auto!important;width:auto!important;min-width:64px!important;height:48px!important;border:0!important;background:transparent!important;color:#fff!important;font-size:20px!important;font-weight:700!important;text-align:center!important;opacity:1!important;padding:0!important}",
+    "#view-workout .pro-row [data-act='set-r']{width:52px;flex:0 0 52px;height:48px;border-radius:14px;border:1px solid #2c2c30;background:#141414;color:#fff;text-align:center;font-size:18px;font-weight:700}",
+    "#view-workout .pro-row [data-act='toggle-set']{width:44px;flex:0 0 44px;height:44px;border-radius:22px;border:1px solid #2c2c30;background:#141414}",
+    "#view-workout .pro-row [data-act='toggle-set']:not(.ghost){background:#fafafa;color:#111}"
   ].join("");
   function bump(btn, dir) {
     var inp = btn.parentNode.querySelector("input");
@@ -29,27 +29,28 @@
     inp.dispatchEvent(new Event("change", { bubbles: true }));
   }
   function mount() {
+    document.querySelectorAll("#view-workout .kg-step").forEach(function (wrap) {
+      var inp = wrap.querySelector("input");
+      if (inp) wrap.parentNode.insertBefore(inp, wrap);
+      wrap.remove();
+    });
     document.querySelectorAll("#view-workout .set-grid:not(.tiny)").forEach(function (grid) {
       if (grid.dataset.pro) return;
       var w = grid.querySelector("[data-act='set-w']");
       var r = grid.querySelector("[data-act='set-r']");
       var tick = grid.querySelector("[data-act='toggle-set']");
       if (!w || !r || !tick) return;
-      var n = (grid.querySelector("div") || {}).textContent || "";
       var row = document.createElement("div");
       row.className = "pro-row";
       var num = document.createElement("div");
       num.className = "pro-n";
-      num.textContent = n.trim();
+      num.textContent = ((grid.querySelector("div") || {}).textContent || "").trim();
       var kg = document.createElement("div");
       kg.className = "pro-kg";
       var minus = document.createElement("button");
       minus.type = "button"; minus.textContent = "\u2212";
       var plus = document.createElement("button");
       plus.type = "button"; plus.textContent = "+";
-      w.style.width = "0";
-      w.style.minWidth = "0";
-      w.style.flex = "1 1 0";
       kg.appendChild(minus); kg.appendChild(w); kg.appendChild(plus);
       row.appendChild(num); row.appendChild(kg); row.appendChild(r); row.appendChild(tick);
       minus.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); bump(minus, -1); });
