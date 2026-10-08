@@ -1,11 +1,11 @@
-const CACHE = "gym-log-v110";
-const ASSETS = ["/", "/index.html", "/boot.js", "/perf.js", "/app.js", "/suggest.js", "/extra.js", "/more.js", "/cues.js", "/backup.js", "/homeui.js", "/trainsets.js", "/restfix.js", "/volume.js", "/plus.js", "/typefix.js", "/restctl.js", "/layout.js", "/sesspause.js", "/delfix.js", "/pro.js", "/mobile.js", "/history.js", "/prs.js", "/charts.js", "/gear.js", "/timers.js", "/nav.js", "/continue.js", "/units.js", "/polish.js", "/screens.js", "/theme.js", "/improvements.js", "/trainfix.js", "/templates.js", "/sessiontimer.js", "/gearlink.js", "/logpr.js", "/parse.worker.js", "/manifest.webmanifest", "/icon.svg"];
-self.addEventListener("install", (event) => { event.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting())); });
-self.addEventListener("activate", (event) => { event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-  event.respondWith(fetch(event.request).then((res) => {
-    if (res && res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(event.request, copy)); }
-    return res;
-  }).catch(function () { return caches.match(event.request); }));
+self.addEventListener("install", function () { self.skipWaiting(); });
+self.addEventListener("activate", function (event) {
+  event.waitUntil(caches.keys().then(function (keys) { return Promise.all(keys.map(function (k) { return caches.delete(k); })); }).then(function () { return self.clients.claim(); }));
+});
+self.addEventListener("fetch", function (event) {
+  if (event.request.mode === "navigate") {
+    event.respondWith(fetch(event.request, { cache: "no-store" }));
+    return;
+  }
+  event.respondWith(fetch(event.request).catch(function () { return caches.match(event.request); }));
 });
