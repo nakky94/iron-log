@@ -8,16 +8,16 @@
   var css = document.getElementById("trainHide");
   if (!css) { css = document.createElement("style"); css.id = "trainHide"; document.head.appendChild(css); }
   css.textContent = [
-    "#view-workout .set-grid{display:flex!important;flex-wrap:nowrap!important;align-items:center!important;gap:8px!important;margin:8px 0 0!important;height:48px!important}",
-    "#view-workout .set-grid.tiny{display:none!important}",
-    "#view-workout .set-grid > div:first-child{width:18px!important;flex:0 0 18px!important;color:#8a8a8e!important;font-size:13px!important;font-weight:650!important;text-align:center}",
-    "#view-workout .ghost-set,#view-workout .wu-chip,#view-workout [data-act='del-set'],#view-workout [data-act='step-w']{display:none!important}",
-    "#view-workout .kg-step{flex:1 1 auto!important;display:flex!important;align-items:center!important;height:44px!important;background:#1a1a1a!important;border:1px solid #2a2a2e!important;border-radius:12px!important;overflow:hidden}",
-    "#view-workout .kg-step button{display:flex!important;width:40px!important;height:44px!important;flex:0 0 40px!important;border:0!important;background:#222!important;color:#f4f4f5!important;font-size:20px!important;font-weight:600!important;align-items:center;justify-content:center}",
-    "#view-workout .kg-step input{flex:1!important;min-width:0!important;height:44px!important;border:0!important;background:transparent!important;text-align:center!important;font-size:17px!important;font-weight:700!important;color:#f4f4f5!important;padding:0!important}",
-    "#view-workout [data-act='set-r']{flex:0 0 56px!important;width:56px!important;height:44px!important;border-radius:12px!important;border:1px solid #2a2a2e!important;background:#1a1a1a!important;text-align:center!important;font-size:17px!important;font-weight:700!important;color:#f4f4f5!important}",
-    "#view-workout [data-act='toggle-set']{flex:0 0 44px!important;width:44px!important;height:44px!important;border-radius:22px!important;border:1px solid #2a2a2e!important;background:#1a1a1a!important;margin:0!important}",
-    "#view-workout [data-act='toggle-set']:not(.ghost){background:#f4f4f5!important;color:#111!important;border-color:#f4f4f5!important}"
+    "#view-workout .set-grid.tiny,#view-workout .ghost-set,#view-workout .wu-chip,#view-workout [data-act='step-w'],#view-workout [data-act='del-set']{display:none!important}",
+    "#view-workout .set-grid{display:none!important}",
+    "#view-workout .pro-row{display:flex;align-items:center;gap:8px;margin-top:8px}",
+    "#view-workout .pro-n{width:22px;flex:0 0 22px;text-align:center;color:#8d8d92;font-size:13px;font-weight:650}",
+    "#view-workout .pro-kg{flex:1;display:flex;align-items:center;height:46px;background:#171717;border:1px solid #2a2a2e;border-radius:14px;overflow:hidden}",
+    "#view-workout .pro-kg button{width:42px;height:46px;flex:0 0 42px;border:0;background:#222;color:#f4f4f5;font-size:20px;font-weight:600}",
+    "#view-workout .pro-kg input{flex:1;min-width:0;height:46px;border:0;background:transparent;text-align:center;color:#f4f4f5;font-size:18px;font-weight:700;padding:0}",
+    "#view-workout .pro-row [data-act='set-r']{width:58px;flex:0 0 58px;height:46px;border-radius:14px;border:1px solid #2a2a2e;background:#171717;text-align:center;color:#f4f4f5;font-size:18px;font-weight:700}",
+    "#view-workout .pro-row [data-act='toggle-set']{width:46px;flex:0 0 46px;height:46px;border-radius:23px;border:1px solid #2a2a2e;background:#171717;margin:0}",
+    "#view-workout .pro-row [data-act='toggle-set']:not(.ghost){background:#f4f4f5;color:#111;border-color:#f4f4f5}"
   ].join("");
   function bump(btn, dir) {
     var inp = btn.parentNode.querySelector("input");
@@ -27,21 +27,36 @@
     inp.dispatchEvent(new Event("change", { bubbles: true }));
   }
   function mount() {
-    document.querySelectorAll("#view-workout [data-act='set-w']").forEach(function (inp) {
-      if (inp.closest(".kg-step")) return;
-      var wrap = document.createElement("div");
-      wrap.className = "kg-step";
-      inp.parentNode.insertBefore(wrap, inp);
+    document.querySelectorAll("#view-workout .set-grid:not(.tiny)").forEach(function (grid) {
+      if (grid.dataset.pro) return;
+      var w = grid.querySelector("[data-act='set-w']");
+      var r = grid.querySelector("[data-act='set-r']");
+      var tick = grid.querySelector("[data-act='toggle-set']");
+      if (!w || !r || !tick) return;
+      var n = (grid.querySelector("div") || {}).textContent || "";
+      var row = document.createElement("div");
+      row.className = "pro-row";
+      var num = document.createElement("div");
+      num.className = "pro-n";
+      num.textContent = n.trim();
+      var kg = document.createElement("div");
+      kg.className = "pro-kg";
       var minus = document.createElement("button");
       minus.type = "button"; minus.textContent = "\u2212";
       var plus = document.createElement("button");
       plus.type = "button"; plus.textContent = "+";
-      wrap.appendChild(minus); wrap.appendChild(inp); wrap.appendChild(plus);
+      kg.appendChild(minus); kg.appendChild(w); kg.appendChild(plus);
+      row.appendChild(num); row.appendChild(kg); row.appendChild(r); row.appendChild(tick);
       minus.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); bump(minus, -1); });
       plus.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); bump(plus, 1); });
+      grid.dataset.pro = "1";
+      grid.insertAdjacentElement("afterend", row);
     });
   }
   mount();
   var view = document.getElementById("view-workout");
-  if (view) new MutationObserver(mount).observe(view, { childList: true, subtree: true });
+  if (view) new MutationObserver(function () { mount(); }).observe(view, { childList: true, subtree: true });
+  document.querySelectorAll(".nav button").forEach(function (b) {
+    b.addEventListener("click", function () { setTimeout(mount, 60); });
+  });
 })();
