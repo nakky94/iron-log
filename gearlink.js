@@ -1,8 +1,9 @@
 (function () {
   if (!document.querySelector('script[src="logpr.js"]')) {
-    var s = document.createElement("script");
-    s.src = "logpr.js";
-    document.body.appendChild(s);
+    var s = document.createElement("script"); s.src = "logpr.js"; document.body.appendChild(s);
+  }
+  if (!document.querySelector('script[src="gearpage.js"]')) {
+    var g = document.createElement("script"); g.src = "gearpage.js"; document.body.appendChild(g);
   }
   var css = document.getElementById("gearLinkCss");
   if (!css) { css = document.createElement("style"); css.id = "gearLinkCss"; document.head.appendChild(css); }
@@ -15,9 +16,7 @@
     var box = document.getElementById("homeScreen");
     if (!box || document.getElementById("hsGear")) return;
     var b = document.createElement("button");
-    b.id = "hsGear";
-    b.type = "button";
-    b.textContent = "Exercises";
+    b.id = "hsGear"; b.type = "button"; b.textContent = "Exercises";
     b.onclick = function () {
       var n = document.querySelector(".nav button[data-view='library']");
       if (n) n.click();
@@ -25,11 +24,12 @@
     box.appendChild(b);
   }
   document.addEventListener("click", function (e) {
+    if (e.target.closest(".fav-ex, #gearPager, #gearPrev, #gearNext")) return;
     var lib = document.getElementById("view-library");
     if (!lib || !lib.classList.contains("active")) return;
     var hit = e.target.closest("[data-act='add-ex'], [data-act='add'], [data-eid], .ex-name");
     if (!hit || !lib.contains(hit)) return;
-    if (hit.closest("input, select, #libSearch")) return;
+    if (hit.closest("input, select, #libSearch, #gearLocker")) return;
     setTimeout(toTrain, 60);
   }, true);
   link();
