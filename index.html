@@ -46,11 +46,11 @@
     .chips::-webkit-scrollbar{display:none}
     input,select,textarea{width:100%;background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:16px}
     .ex-name{font-weight:700;text-align:left;letter-spacing:-.02em}
-    .set-grid{display:grid;grid-template-columns:24px 70px 1fr 70px 44px;gap:6px;align-items:center;margin-top:8px}
+    .set-grid{display:grid;grid-template-columns:28px minmax(0,1fr) 64px 44px;gap:6px;align-items:center;margin-top:8px}
     .set-grid input{text-align:center;padding:8px 4px;min-height:44px;font-size:16px}
     .step-wrap{display:flex;align-items:center;gap:3px;min-width:0}
     .step-wrap input{flex:1;min-width:0}
-    .step{width:44px;height:44px;border-radius:10px;background:#1c1c1c;font-weight:800}
+    .step{width:36px;height:40px;border-radius:10px;background:#1c1c1c;font-weight:800}
     .ghost-set{display:none}
     .timer-overlay{display:none !important}
     .sess-strip{display:flex;flex-wrap:wrap;justify-content:space-between;padding:6px 2px 10px;color:var(--muted);font-size:12px;font-weight:600;position:sticky;top:calc(44px + var(--safe-t));background:var(--bg);z-index:8}
@@ -122,5 +122,6 @@
   <script src="screens.js" defer></script>
   <script src="theme.js" defer></script>
   <script src="improvements.js" defer></script>
+  <script src="trainfix.js" defer></script>
 </body>
 </html>
