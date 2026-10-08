@@ -47,7 +47,8 @@
     paint();
   }
   function rest() {
-    restUntil = Date.now() + 60 * 1000;
+    var sec = Number(load("il_rest", 60)) || 60;
+    restUntil = Date.now() + sec * 1000;
     restLeft = 0;
     var el = bar(); if (el) el.dataset.mode = "";
     paint();
@@ -101,7 +102,7 @@
   document.addEventListener("click", function (e) {
     if (e.target.id === "trainStart") { e.preventDefault(); start(); return; }
     if (e.target.id === "sessPause") { togglePause(); return; }
-    if (e.target.id === "sessEnd") { save("il_clock", {}); restUntil = 0; restLeft = 0; var el = bar(); if (el) { el.classList.remove("on"); el.dataset.mode = ""; } paint(); return; }
+    if (e.target.id === "sessEnd") return;
     if (e.target.id === "restSkip") { restUntil = 0; restLeft = 0; var el = bar(); if (el) el.dataset.mode = ""; paint(); return; }
     var tick = e.target.closest("[data-act='toggle-set']");
     if (tick && started() && !paused()) {
