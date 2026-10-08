@@ -18,7 +18,11 @@
   function paused() { return !!clock().pausedAt; }
   var css = document.getElementById("sessTimerCss");
   if (!css) { css = document.createElement("style"); css.id = "sessTimerCss"; document.head.appendChild(css); }
-  css.textContent = "#sessionTimer{display:none;position:sticky;top:0;z-index:12;margin:0 0 10px;background:#141414;border:1px solid #2a2a2e;border-radius:16px;padding:10px 12px;align-items:center;justify-content:space-between;gap:8px}#sessionTimer.on{display:flex}#sessionTimer b{font-size:22px;font-variant-numeric:tabular-nums}#sessionTimer button{min-height:36px;padding:0 12px;border-radius:999px;border:1px solid #2a2a2e;background:#1c1c1c;color:#f4f4f5}";
+  css.textContent = "#sessClock,#clkPause,#clkEnd{display:none!important}#sessionTimer{display:none;position:sticky;top:0;z-index:12;margin:0 0 10px;background:#141414;border:1px solid #2a2a2e;border-radius:16px;padding:10px 12px;align-items:center;justify-content:space-between;gap:8px}#sessionTimer.on{display:flex}#sessionTimer b{font-size:22px;font-variant-numeric:tabular-nums}#sessionTimer button{min-height:36px;padding:0 12px;border-radius:999px;border:1px solid #2a2a2e;background:#1c1c1c;color:#f4f4f5}";
+  function dropOld() {
+    var old = document.getElementById("sessClock");
+    if (old) old.remove();
+  }
   function bar() {
     var view = document.getElementById("view-workout");
     if (!view) return null;
@@ -49,6 +53,7 @@
     paint();
   }
   function paint() {
+    dropOld();
     var el = bar();
     if (!el) return;
     var on = document.getElementById("view-workout") && document.getElementById("view-workout").classList.contains("active");
@@ -66,6 +71,7 @@
     }
   }
   document.addEventListener("click", function (e) {
+    if (e.target.id === "clkPause" || e.target.id === "clkEnd") { e.preventDefault(); e.stopPropagation(); return; }
     if (e.target.id === "sessPause") { togglePause(); return; }
     if (e.target.id === "sessEnd") { save("il_clock", {}); restUntil = 0; restLeft = 0; var el = bar(); if (el) { el.classList.remove("on"); el.dataset.mode = ""; } return; }
     if (e.target.id === "restSkip") { restUntil = 0; restLeft = 0; var el = bar(); if (el) el.dataset.mode = ""; paint(); return; }
