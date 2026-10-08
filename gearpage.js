@@ -10,18 +10,19 @@
   var css = document.getElementById("gearPageCss");
   if (!css) { css = document.createElement("style"); css.id = "gearPageCss"; document.head.appendChild(css); }
   css.textContent = [
-    "#view-library input[type='search'],#view-library #libSearch,#view-library [placeholder*='earch']{display:none!important}",
+    "#view-library input[type='search'],#view-library #libSearch,#view-library [placeholder*='earch'],#gearAddRow{display:none!important}",
     "#view-library .ex-hide,#gearGrid .tag,#gearGrid .tiny{display:none!important}",
     "#gearTop{margin:8px 0 10px}",
-    "#gearTop .chips{margin:0 0 8px}",
-    "#gearAddRow{display:flex;justify-content:flex-end;margin:0 0 8px}",
-    "#addEx{min-height:34px;padding:0 12px;border-radius:999px;border:1px solid #2a2a2e;background:#1c1c1c;color:#f4f4f5}",
+    "#gearTop .chips{display:flex;gap:6px;align-items:center;overflow-x:auto;margin:0 0 8px}",
+    "#gearTop .chips #addEx{margin-left:auto;flex:0 0 auto}",
+    "#addEx{min-height:34px;padding:0 12px;border-radius:999px;border:1px solid #2a2a2e;background:#f4f4f5;color:#111;font-weight:700}",
     "#gearGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}",
-    "#gearGrid .card{margin:0!important;padding:10px!important;min-height:64px;text-align:left;position:relative;width:auto!important}",
+    "#gearGrid .card{margin:0!important;padding:10px!important;min-height:64px;text-align:left;width:auto!important}",
     "#gearGrid .row.space{display:flex;align-items:center;gap:6px}",
     "#gearGrid .ex-name{font-size:14px;line-height:1.25}",
     "#gearGrid [data-act='add-ex']{width:auto!important;min-height:32px;padding:6px 8px;flex:0 0 auto}",
     "#gearGrid .fav-ex{width:28px;height:28px;flex:0 0 28px;border-radius:14px;border:1px solid #2a2a2e;background:#1c1c1c;color:#f4f4f5}",
+    "#gearGrid .fav-ex.on{background:#f4f4f5;color:#111}",
     "#gearPager{display:flex;gap:8px;align-items:center;margin:8px 0 16px}",
     "#gearPager button{min-height:32px;padding:0 10px;border-radius:999px;border:1px solid #2a2a2e;background:#1c1c1c;color:#f4f4f5}"
   ].join("");
@@ -29,7 +30,7 @@
     var n = nameOf(card);
     if (!n || n === "Locker" || /^dumbbells?$/i.test(n) || /^machines?$/i.test(n)) return false;
     if (/custom exercise|recently used|suggested from/i.test(n)) return false;
-    return !!card.querySelector("[data-act='add-ex'], .ex-name");
+    return true;
   }
   function paint() {
     var view = document.getElementById("view-library");
@@ -41,12 +42,15 @@
     });
     var top = document.getElementById("gearTop");
     if (!top) { top = document.createElement("div"); top.id = "gearTop"; view.insertBefore(top, view.firstChild); }
-    Array.prototype.slice.call(view.querySelectorAll(":scope > .chips")).forEach(function (row) { top.appendChild(row); });
-    if (!top.querySelector("#addEx")) {
-      var row = document.createElement("div");
-      row.id = "gearAddRow";
-      row.innerHTML = "<button type='button' id='addEx'>Add exercise</button>";
-      top.appendChild(row);
+    var rows = Array.prototype.slice.call(view.querySelectorAll(".chips")).filter(function (row) {
+      return /All|Dumbbell|Machine|muscle|Chest/i.test(row.textContent || "") && !row.closest("#gearLocker");
+    });
+    rows.forEach(function (row) { top.appendChild(row); });
+    var typeRow = rows.filter(function (row) { return /Dumbbell/i.test(row.textContent || ""); })[0] || rows[0];
+    if (typeRow && !typeRow.querySelector("#addEx")) {
+      var b = document.createElement("button");
+      b.id = "addEx"; b.type = "button"; b.textContent = "Add exercise";
+      typeRow.appendChild(b);
     }
     var grid = document.getElementById("gearGrid");
     if (!grid) { grid = document.createElement("div"); grid.id = "gearGrid"; top.insertAdjacentElement("afterend", grid); }
@@ -62,16 +66,12 @@
       if (!star) {
         star = document.createElement("button");
         star.type = "button"; star.className = "fav-ex";
-        star.addEventListener("click", function (e) {
-          e.preventDefault(); e.stopPropagation();
-          var n = nameOf(c), list = favs(), at = list.indexOf(n);
-          if (at >= 0) list.splice(at, 1); else list.unshift(n);
-          save("il_fav_ex", list); paint();
-        });
+        var line = c.querySelector(".row.space") || c;
+        line.insertBefore(star, line.firstChild);
       }
-      star.textContent = fav.indexOf(nameOf(c)) >= 0 ? "\u2605" : "\u2606";
-      var line = c.querySelector(".row.space") || c;
-      line.insertBefore(star, line.firstChild);
+      var on = fav.indexOf(nameOf(c)) >= 0;
+      star.textContent = on ? "\u2605" : "\u2606";
+      star.classList.toggle("on", on);
     });
     var pager = document.getElementById("gearPager");
     if (!pager) { pager = document.createElement("div"); pager.id = "gearPager"; view.appendChild(pager); }
@@ -84,21 +84,33 @@
     var raw = prompt("Dumbbell or Machine", "Dumbbell") || "Dumbbell";
     var t = /^machine/i.test(raw) ? "Machine" : "Dumbbell";
     var view = document.getElementById("view-library");
-    var card = document.createElement("button");
-    card.className = "card"; card.type = "button";
-    card.innerHTML = "<div class='row space'><div class='grow'><div class='ex-name'></div></div><button class='btn sm' type='button' data-act='add-ex'>Add</button></div>";
+    var card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = "<div class='row space'><div class='grow'><div class='ex-name'></div><div class='tiny'></div></div><button class='btn sm' type='button' data-act='add-ex'>Add</button></div>";
     card.querySelector(".ex-name").textContent = n;
-    card.dataset.kind = t;
+    card.querySelector(".tiny").textContent = t;
     view.appendChild(card);
     page = 0; paint();
   }
   document.addEventListener("click", function (e) {
+    var star = e.target.closest(".fav-ex");
+    if (star) {
+      e.preventDefault(); e.stopPropagation();
+      var card = star.closest(".card");
+      var n = nameOf(card);
+      var list = favs();
+      var at = list.indexOf(n);
+      if (at >= 0) list.splice(at, 1); else list.unshift(n);
+      save("il_fav_ex", list);
+      paint();
+      return;
+    }
     if (e.target.id === "addEx") { e.preventDefault(); e.stopPropagation(); addExercise(); return; }
     if (e.target.id === "gearPrev") { page = Math.max(0, page - 1); paint(); }
     if (e.target.id === "gearNext") { page += 1; paint(); }
   }, true);
   var view = document.getElementById("view-library");
-  if (view) new MutationObserver(function () { setTimeout(paint, 40); }).observe(view, { childList: true, subtree: true });
+  if (view) new MutationObserver(function () { setTimeout(paint, 50); }).observe(view, { childList: true });
   document.querySelectorAll(".nav button").forEach(function (b) { b.addEventListener("click", function () { setTimeout(paint, 80); }); });
   paint();
 })();
