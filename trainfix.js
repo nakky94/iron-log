@@ -8,40 +8,36 @@
   var css = document.getElementById("trainHide");
   if (!css) { css = document.createElement("style"); css.id = "trainHide"; document.head.appendChild(css); }
   css.textContent = [
-    "#restBar,#continueBox,#trainDock,#sessStrip,#liveHead,.rir-row,#view-workout .ghost-set,#view-workout .wu-chip,#view-workout [data-act='step-w'],#view-workout .kg-minus,#view-workout .kg-plus,#view-workout .step{display:none!important}",
-    "#view-workout .set-grid.tiny{display:none!important}",
+    "#restBar,#continueBox,#trainDock,#sessStrip,#liveHead,#repeatLast,#backupNudge,#setCap,.rir-row,.deload-flag,.next-line,.last-pr,.last-load{display:none!important}",
+    "#view-workout [data-act='rest-pref'],#view-workout [data-act='start-timer'],#view-workout #sessNotes,#view-workout [data-act='save-template'],#view-workout [data-act='discard']{display:none!important}",
+    "#view-workout [data-act='rm-move']{width:32px!important;height:32px!important;min-width:32px!important;padding:0!important;border-radius:10px!important}",
     "#view-workout .set-grid{display:none!important}",
     "#view-workout .pro-row{display:flex!important;align-items:center;gap:8px;margin-top:8px;width:100%}",
     "#view-workout .pro-n{width:18px;flex:0 0 18px;color:#8d8d92;font-size:13px;font-weight:650;text-align:center}",
-    "#view-workout .pro-kg{flex:1 1 auto;display:flex;align-items:center;height:48px;min-width:0;background:#141414;border:1px solid #2c2c30;border-radius:16px}",
+    "#view-workout .pro-kg{flex:1;display:flex;align-items:center;height:48px;min-width:0;background:#141414;border:1px solid #2c2c30;border-radius:16px}",
     "#view-workout .pro-kg > button{width:40px;flex:0 0 40px;height:48px;border:0;background:transparent;color:#e4e4e7;font-size:22px}",
     "#view-workout .pro-kg > button:first-child{border-right:1px solid #2c2c30}",
     "#view-workout .pro-kg > button:last-child{border-left:1px solid #2c2c30}",
-    "#view-workout .pro-kg input{display:block!important;flex:1 1 auto!important;width:auto!important;min-width:64px!important;height:48px!important;border:0!important;background:transparent!important;color:#fff!important;font-size:20px!important;font-weight:700!important;text-align:center!important;opacity:1!important;padding:0!important}",
+    "#view-workout .pro-kg input{display:block!important;flex:1!important;min-width:64px!important;height:48px!important;border:0!important;background:transparent!important;color:#fff!important;font-size:20px!important;font-weight:700!important;text-align:center!important;padding:0!important}",
     "#view-workout .pro-row [data-act='set-r']{width:52px;flex:0 0 52px;height:48px;border-radius:14px;border:1px solid #2c2c30;background:#141414;color:#fff;text-align:center;font-size:18px;font-weight:700}",
     "#view-workout .pro-row [data-act='toggle-set']{width:44px;flex:0 0 44px;height:44px;border-radius:22px;border:1px solid #2c2c30;background:#141414}",
     "#view-workout .pro-row [data-act='toggle-set']:not(.ghost){background:#fafafa;color:#111}"
   ].join("");
-  function junk(el) {
-    var t = (el.textContent || "").replace(/\s+/g, " ").trim();
-    if (!t) return false;
-    if (/^continue$/i.test(t)) return true;
-    if (/^add all$/i.test(t)) return true;
-    if (/^all exercises$/i.test(t)) return true;
-    if (/rest after a set/i.test(t) && el.querySelector("[data-rest-sec],.chip")) return true;
-    if (/workout in progress/i.test(t) && /finish workout/i.test(t)) return true;
-    if (/^RIR\s*0?1?2?3?$/i.test(t)) return true;
-    return false;
-  }
+  function text(el) { return (el.textContent || "").replace(/\s+/g, " ").trim(); }
   function strip() {
-    ["restBar", "continueBox", "trainDock", "sessStrip", "liveHead"].forEach(function (id) {
-      var n = document.getElementById(id);
-      if (n) n.remove();
+    ["restBar","continueBox","trainDock","sessStrip","liveHead","repeatLast","backupNudge","setCap"].forEach(function (id) {
+      var n = document.getElementById(id); if (n) n.remove();
     });
-    document.querySelectorAll("#view-workout .rir-row").forEach(function (n) { n.remove(); });
-    document.querySelectorAll("#view-workout button, #view-workout .card, #view-workout .tiny, #view-workout div").forEach(function (el) {
+    document.querySelectorAll(".rir-row,.deload-flag,.last-pr,.last-load").forEach(function (n) { n.remove(); });
+    document.querySelectorAll("#view-workout [data-act='rest-pref'], #view-workout [data-act='start-timer'], #sessNotes, [data-act='save-template'], [data-act='discard']").forEach(function (n) { n.remove(); });
+    document.querySelectorAll("button, .card, .tiny, div").forEach(function (el) {
       if (el.querySelector && el.querySelector(".set-grid,.pro-row,[data-act='set-w']")) return;
-      if (junk(el)) el.remove();
+      var t = text(el);
+      if (!t || t.length > 180) return;
+      if (/^(continue|add all|all exercises|rest|warm-up|cue|\+ move)$/i.test(t)) el.remove();
+      else if (/^rest after a set/i.test(t) || /workout in progress/i.test(t) || /^next time/i.test(t) || /stalled at/i.test(t) || /deload this lift/i.test(t) || /^previous:/i.test(t) || t === "History") el.remove();
+      else if (/^custom exercise/i.test(t)) el.remove();
+      else if (/^last workout$/i.test(t) || /^most recent pr$/i.test(t)) { var card = el.closest(".card"); if (card) card.remove(); }
     });
   }
   function bump(btn, dir) {
@@ -84,6 +80,8 @@
     });
   }
   mount();
-  var view = document.getElementById("view-workout");
-  if (view) new MutationObserver(function () { mount(); }).observe(view, { childList: true, subtree: true });
+  ["view-workout","view-home","view-library"].forEach(function (id) {
+    var n = document.getElementById(id);
+    if (n) new MutationObserver(function () { mount(); }).observe(n, { childList: true, subtree: true });
+  });
 })();
