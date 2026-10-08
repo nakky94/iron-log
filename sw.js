@@ -1,4 +1,4 @@
-const CACHE = "gym-log-v89";
+const CACHE = "gym-log-v90";
 const ASSETS = ["/", "/index.html", "/perf.js", "/app.js", "/suggest.js", "/extra.js", "/more.js", "/cues.js", "/backup.js", "/homeui.js", "/trainsets.js", "/restfix.js", "/volume.js", "/plus.js", "/typefix.js", "/restctl.js", "/layout.js", "/sesspause.js", "/delfix.js", "/pro.js", "/mobile.js", "/history.js", "/prs.js", "/charts.js", "/gear.js", "/timers.js", "/nav.js", "/continue.js", "/units.js", "/polish.js", "/screens.js", "/theme.js", "/improvements.js", "/trainfix.js", "/parse.worker.js", "/manifest.webmanifest", "/icon.svg"];
 self.addEventListener("install", (event) => { event.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (event) => { event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
